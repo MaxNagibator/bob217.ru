@@ -1,0 +1,68 @@
+﻿using Newtonsoft.Json;
+using System.Diagnostics;
+using System.Threading;
+
+var path = "E:\\bobgroup\\repo\\TrashJsonWriter\\Examples\\myfile.txt";
+var content = "privet";
+
+// File.WriteAllText(path, content);
+
+var myText = File.ReadAllText(path);
+Console.WriteLine(myText);
+
+var myComputer = new Computer();
+myComputer.Name = "домашний";
+myComputer.Description = "стоит в гостиной";
+myComputer.Monitor1 = new Monitor();
+myComputer.Monitor1.Name = "Большой моник";
+myComputer.Monitor1.Width = 27;
+
+var workComputer = new Computer
+{
+    Name = "рабочий",
+    Description = "стоит на кухне",
+    Monitor1 = new Monitor
+    {
+        Name = "HP",
+        Width = 23,
+    },
+    Monitor2 = new Monitor
+    {
+        Name = "ACER",
+        Width = 24,
+    },
+};
+
+var computers = new Computer[2];
+computers[0] = myComputer;
+computers[1] = workComputer;
+
+computers = new Computer[] { myComputer, workComputer };
+
+var computerInfo = JsonConvert.SerializeObject(computers, Formatting.Indented);
+File.WriteAllText(path, computerInfo);
+
+var myComputers2 = JsonConvert.DeserializeObject< Computer[]> (computerInfo);
+Console.WriteLine(myComputers2[0].Name);
+Console.WriteLine(myComputers2[1].Name);
+
+public class Computer
+{
+    public string Name { get; set; }
+    public string Description { get; set; }
+    public Monitor Monitor1 { get; set; }
+    public Monitor Monitor2 { get; set; }
+}
+
+public class Monitor
+{
+    /// <summary>
+    /// Наименование.
+    /// </summary>
+    public string Name { get; set; }
+
+    /// <summary>
+    /// Диагональ в дюймах.
+    /// </summary>
+    public int Width { get; set; }
+}
