@@ -137,6 +137,24 @@
         "Скачай последнюю версию SpaceSnoop для исследования своей файловой системы."
       ],
       "link": "SpaceSnoop v2.3.zip"
+    },
+    {
+      "title": "Эмулятор денди fceux-2.6.6-win64",
+      "icon": "img/dendy.png",
+      "short_description": "Для окунания в детство",
+      "description": [
+        "Зеркало, оригинал тута https://fceux.com/web/download.html."
+      ],
+      "link": "Dendy_fceux-2.6.6-win64-QtSDL.zip"
+    },
+    {
+      "title": "Сами игры денди",
+      "icon": "img/dendy2.jpg",
+      "short_description": "Картриджы для денди",
+      "description": [
+        "Большая пачка, чип и деил, утиные истории и прочая классика тут."
+      ],
+      "link": "Dendy_Roms.zip"
     }
   ]
 }
