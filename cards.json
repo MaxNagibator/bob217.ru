@@ -97,6 +97,15 @@
         "Позволь своим накопителям дышать полной грудью, убери весь хлам!"
       ],
       "link": "https://github.com/MaxNagibator/SpaceSnoop"
+    },
+    {
+      "title": "SpaceSnoop",
+      "icon": "img/ruletka.png",
+      "short_description": "Игра викторина, играй с друзьями",
+      "description": [
+        "Игра викторина, играй с друзьями!"
+      ],
+      "link": "https://github.com/MaxNagibator/ElementaryGame"
     }
   ],
   "Записи и стримы": [

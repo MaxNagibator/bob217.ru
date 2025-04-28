@@ -16,14 +16,14 @@ jobs:
 
       - name: Copy folder
         run: |
-          SOURCE_DIR="."  # Папка-источник (относительно корня репозитория)
-          DEST_DIR="E:\publish\bob217\WebTemp"  # Папка-назначение
+          $SourceDir = "$env:GITHUB_WORKSPACE"
+          $DestDir = "E:\publish\bob217\WebTemp"
 
           # Создаем папку назначения (если её нет)
-          mkdir -p "$DEST_DIR"
+          New-Item -ItemType Directory -Path $DestDir -Force | Out-Null
 
-          # Копируем содержимое (рекурсивно)
-          cp -R "$SOURCE_DIR/." "$DEST_DIR/"
+          # Копируем всё содержимое (рекурсивно)
+          Copy-Item -Path "$SourceDir\*" -Destination $DestDir -Recurse -Force
 
-          # Опционально: выводим список скопированных файлов
-          ls -la "$DEST_DIR"
+          # Проверяем результат
+          Get-ChildItem -Path $DestDir -Recurse | Select-Object FullName
