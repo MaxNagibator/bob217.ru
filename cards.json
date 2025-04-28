@@ -2,7 +2,7 @@
   "Проекты": [
     {
       "title": "Филочки",
-      "icon": "https://money.bob217.ru/Images/gold_32.png",
+      "icon": "/img/money.png",
       "short_description": "Личный финансовый помощник",
       "description": [
         "Завел очередную любовницу, но не знаешь, сколько на неё тратишь? Каждый вечер в ресторане, подарки на праздники – всё это складывается в круглую сумму, а ты даже не ведёшь учёт.",
@@ -16,7 +16,7 @@
     },
     {
       "title": "Копатель",
-      "icon": "https://miner.bob217.ru/Images/Buildings/castle_64.png",
+      "icon": "/img/digger.png",
       "short_description": "Погрузись в жестокий мир копания",
       "description": [
         "Погрузись в жестокий мир проекта «Копатель»!",
@@ -27,7 +27,7 @@
     },
     {
       "title": "Шахматишки",
-      "icon": "https://chess.bob217.ru/favicon.ico",
+      "icon": "/img/chess.png",
       "short_description": "Стратегическая игра в шахматы",
       "description": [
         "Проверь свои стратегические навыки только с проектом «Шахматишки»!",
@@ -41,7 +41,7 @@
     },
     {
       "title": "Загрузчик с ютуба",
-      "icon": "https://downloads.bob217.ru/favicon.ico",
+      "icon": "/img/ytdownloader.png",
       "short_description": "Скачивай видео и аудио с YouTube",
       "description": [
         "Устали от постоянного поиска и загрузки видео?",
@@ -52,7 +52,7 @@
     },
     {
       "title": "Домики",
-      "icon": "https://domiki.bob217.ru/favicon.ico",
+      "icon": "/img/domiki.png",
       "short_description": "Градостроительный симулятор",
       "description": [
         "Почувствуй себя настоящим творцом мира с проектом «Домики»!",
@@ -63,7 +63,7 @@
     },
     {
       "title": "Дурач☻к",
-      "icon": "https://durak.bob217.ru/favicon.ico",
+      "icon": "/img/durak.png",
       "short_description": "Карточная игра в дурака",
       "description": [
         "Устал от изобилия раскрученных донатных помоек?",
@@ -76,7 +76,7 @@
     },
     {
       "title": "Лабиринтик",
-      "icon": "https://maxnagibator.github.io/Labirintiki/icon-192.png",
+      "icon": "/img/maze.png",
       "short_description": "Увлекательный лабиринт",
       "description": [
         "Настоящий прорыв в области тайм-киллеров — проект «Лабиринтик»!",
@@ -88,7 +88,7 @@
     },
     {
       "title": "SpaceSnoop",
-      "icon": "https://cdn0.iconfinder.com/data/icons/cosmo-documents/40/document_system-512.png",
+      "icon": "/img/space-snoop.jpg",
       "short_description": "Исследование файловой системы",
       "description": [
         "Исследуй бескрайние просторы своих накопителей с проектом «Пространственный Шнырь»!",
@@ -99,7 +99,7 @@
       "link": "https://github.com/MaxNagibator/SpaceSnoop"
     },
     {
-      "title": "SpaceSnoop",
+      "title": "Элементарно!",
       "icon": "img/ruletka.png",
       "short_description": "Игра викторина, играй с друзьями",
       "description": [
@@ -120,7 +120,7 @@
     },
     {
       "title": "Стримим тут",
-      "icon": "https://static-cdn.jtvnw.net/jtv_user_pictures/dc13bee1-b61c-496f-b643-d54ba6a21d15-profile_image-70x70.png",
+      "icon": "/img/bobito.jpg",
       "short_description": "Живые стримы на Twitch",
       "description": [
         "Смотри живые стримы на Twitch и будь в курсе всех событий."
@@ -140,7 +140,7 @@
     },
     {
       "title": "SpaceSnoop v2.5",
-      "icon": "https://cdn0.iconfinder.com/data/icons/cosmo-documents/40/document_system-512.png",
+      "icon": "/img/space-snoop.jpg",
       "short_description": "Скачай последнюю версию",
       "description": [
         "Скачай последнюю версию SpaceSnoop для исследования своей файловой системы."
