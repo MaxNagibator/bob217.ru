@@ -2,8 +2,8 @@ name: Copy Folder
 
 on:
   push:
-    branches: [ "master" ]  
-  workflow_dispatch:        # Разрешить ручной запуск из интерфейса GitHub
+    branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
   copy-folder:
@@ -12,12 +12,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4  # Клонирует репозиторий
+        uses: actions/checkout@v4
 
       - name: Copy folder
         run: |
           $SourceDir = "$env:GITHUB_WORKSPACE"
-          $DestDir = "E:\publish\bob217\WebTemp"
+          $DestDir = "E:\publish\bob217\Web"
 
           # Создаем папку назначения (если её нет)
           New-Item -ItemType Directory -Path $DestDir -Force | Out-Null
