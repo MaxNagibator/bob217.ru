@@ -1,0 +1,29 @@
+name: Copy Folder
+
+on:
+  push:
+    branches: [ "master" ]  
+  workflow_dispatch:        # Разрешить ручной запуск из интерфейса GitHub
+
+jobs:
+  copy-folder:
+    runs-on:
+      labels: BobGroupWindowsServer
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4  # Клонирует репозиторий
+
+      - name: Copy folder
+        run: |
+          SOURCE_DIR="."  # Папка-источник (относительно корня репозитория)
+          DEST_DIR="E:\publish\bob217\WebTemp"  # Папка-назначение
+
+          # Создаем папку назначения (если её нет)
+          mkdir -p "$DEST_DIR"
+
+          # Копируем содержимое (рекурсивно)
+          cp -R "$SOURCE_DIR/." "$DEST_DIR/"
+
+          # Опционально: выводим список скопированных файлов
+          ls -la "$DEST_DIR"
