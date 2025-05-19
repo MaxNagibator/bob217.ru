@@ -106,6 +106,15 @@
         "Игра викторина, играй с друзьями!"
       ],
       "link": "https://github.com/MaxNagibator/ElementaryGame"
+    },
+    {
+      "title": "Помогатор!",
+      "icon": "img/pomogator_bot.png",
+      "short_description": "Подписывайся на уведомления о трансляциях",
+      "description": [
+        "Наш бот помогатор для телеги!"
+      ],
+      "link": "https://github.com/MaxNagibator/PomogatorBot"
     }
   ],
   "Записи и стримы": [
