@@ -115,6 +115,15 @@
         "Наш бот помогатор для телеги!"
       ],
       "link": "https://github.com/MaxNagibator/PomogatorBot"
+    },
+    {
+      "title": "Попрошайка бот для твича!",
+      "icon": "img/PoproshaykaBot.png",
+      "short_description": "Попрошайка бот",
+      "description": [
+        "Наш бот помогатор для твича!"
+      ],
+      "link": "https://github.com/MaxNagibator/PoproshaykaBot"
     }
   ],
   "Записи и стримы": [
