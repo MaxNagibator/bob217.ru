@@ -9,32 +9,18 @@ jobs:
   copy-folder:
     runs-on:
       labels: BobGroupWindowsServer
-    environment: globals
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Copy folder
-        env:
-          SAMBA_USER: ${{ vars.SAMBA_USER }}
-          SAMBA_PASS: ${{ secrets.SAMBA_PASS }}
         run: |
-          $SambaServer = "192.168.0.17"
-          $SambaShare = "publish"
           $SourceDir = "$env:GITHUB_WORKSPACE"
-          $DestDir = "\\$SambaServer\$SambaShare\bob217\web"
-
-          # Подключаем SMB-шару с аутентификацией
-          net use \\$SambaServer\$SambaShare /user:$env:SAMBA_USER $env:SAMBA_PASS /persistent:no
+          $DestDir = "E:\publish\bob217\Web"
 
           # Создаем папку назначения (если её нет)
-          if (-not (Test-Path -Path $DestDir)) {
-            New-Item -ItemType Directory -Path $DestDir -Force | Out-Null
-          }
+          New-Item -ItemType Directory -Path $DestDir -Force | Out-Null
 
           # Копируем всё содержимое (рекурсивно)
           Copy-Item -Path "$SourceDir\*" -Destination $DestDir -Recurse -Force
-
-          # Отключаем шару
-          net use \\$SambaServer\$SambaShare /delete /y
