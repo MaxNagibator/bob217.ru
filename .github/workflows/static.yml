@@ -7,13 +7,14 @@ on:
 
 jobs:
   copy-folder:
+    if: ${{ github.event.repository.fork == false }}
     runs-on:
       labels: BobGroupWindowsServer
     environment: globals
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Copy folder
         env:
