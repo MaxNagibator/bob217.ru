@@ -1,4 +1,6 @@
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import WeeklySchedule from './WeeklySchedule.vue'
+</script>
 
 <template>
   <div class="info-content">
@@ -10,40 +12,15 @@
       </a>
     </h2>
     <ul>
-      <li>
+      <li class="main-task">
         <b>Основная задача</b>: Сделать сапёра на vieJs / Авторизация будет через
         https://auth.bob217.ru (который нужно тоже сделать)
       </li>
-      <li>
-        Понедельник, среда —
-        <b>
-          <a href="https://www.twitch.tv/bobito217">Стрим. </a>
-          Работы по основной задаче.
-        </b>
-      </li>
-      <li>
-        Вторник —
-        <b>
-          Оффлайн видосик для
-          <a href="https://www.youtube.com/@bobito217">ютуба</a>
-          . Переезд на linux.
-        </b>
-      </li>
-      <li>
-        По четвергам —
-        <b>
-          <a href="https://www.twitch.tv/bobito217">Стрим. </a>
-          Вопросы/Задачки для собеседования
-        </b>
-      </li>
-      <li>
-        По пятницам —
-        <b>
-          <a href="https://www.twitch.tv/bobito217">Стрим. </a>
-          Обзор творений, присланных на ревью
-        </b>
-      </li>
-      <li>Суббота/Воскресенье — отдыхаем. Но мб чего и будем делать.</li>
+    </ul>
+
+    <WeeklySchedule />
+
+    <ul>
       <li>
         Планы:<br />
         Отсутствуют
