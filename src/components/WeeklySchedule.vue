@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const enum DayOfWeek {
   Sunday = 0,
@@ -33,7 +33,7 @@ interface ScheduleDay {
 }
 
 const LINKS = {
-  STREAM: { url: 'https://www.twitch.tv/bobito217', text: 'Стрим. ' },
+  STREAM: { url: 'https://www.twitch.tv/bobito217', text: 'Стрим' },
   YOUTUBE: { url: 'https://www.youtube.com/@bobito217', text: 'Ютубчик' },
 } as const
 
@@ -73,14 +73,38 @@ const schedule: readonly ScheduleDay[] = [
   },
 ] as const
 
-const scheduleWithStatus = computed(() => {
-  const today = new Date().getDay() as DayOfWeek
+const getCurrentDayOfWeek = (): DayOfWeek => new Date().getDay() as DayOfWeek
 
-  return schedule.map((item) => ({
-    ...item,
-    label: DAY_LABELS[item.day],
-    isCurrent: item.day === today,
-  }))
+const getWeekOrderValue = (day: DayOfWeek): number => (day + 6) % 7
+
+const today = ref(getCurrentDayOfWeek())
+let intervalId: number | undefined
+
+onMounted(() => {
+  intervalId = window.setInterval(() => {
+    today.value = getCurrentDayOfWeek()
+  }, 60_000)
+})
+
+onBeforeUnmount(() => {
+  if (intervalId) {
+    clearInterval(intervalId)
+  }
+})
+
+const scheduleWithStatus = computed(() => {
+  const currentDayOrder = getWeekOrderValue(today.value)
+
+  return schedule.map((item) => {
+    const itemDayOrder = getWeekOrderValue(item.day)
+
+    return {
+      ...item,
+      label: DAY_LABELS[item.day],
+      isCurrent: item.day === today.value,
+      isPast: itemDayOrder < currentDayOrder,
+    }
+  })
 })
 </script>
 
@@ -89,23 +113,43 @@ const scheduleWithStatus = computed(() => {
     <li
       v-for="item in scheduleWithStatus"
       :key="item.day"
-      :class="{ 'current-day': item.isCurrent }"
-      :aria-current="item.isCurrent || undefined"
-      class="schedule-item"
+      :class="['schedule-item', { 'current-day': item.isCurrent, past: item.isPast }]"
+      :aria-current="item.isCurrent ? 'date' : undefined"
     >
-      {{ item.label }} —
-      <b>
-        <a v-if="item.link" :href="item.link.url" target="_blank" rel="noopener noreferrer">
+      <span class="day-label">
+        {{ item.label }}
+        <span v-if="item.isCurrent" class="badge-today">Сегодня</span>
+      </span>
+      —
+      <strong class="day-content">
+        <a
+          v-if="item.link"
+          :href="item.link.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          :aria-label="`${item.link.text} — откроется в новой вкладке`"
+        >
           {{ item.link.text }}
         </a>
+        <template v-if="item.link">. </template>
         {{ item.description }}
-      </b>
+      </strong>
     </li>
   </ul>
 </template>
 
 <style scoped>
 .schedule-list {
+  --schedule-text: #ccc;
+  --schedule-bg: #333;
+  --schedule-bg-hover: #444;
+  --schedule-accent: #4caf50;
+  --schedule-accent-bg: #2a4a2a;
+  --schedule-link: #00bcd4;
+  --schedule-emphasis: #ffcc00;
+  --schedule-badge-bg: #4caf50;
+  --schedule-badge-text: #111;
+
   margin: 0;
   padding: 0;
   list-style-type: none;
@@ -115,53 +159,84 @@ const scheduleWithStatus = computed(() => {
   font-size: 1rem;
   line-height: 1.5;
   margin-bottom: 1rem;
-  padding: 10px;
+  padding: clamp(8px, 1.5vw, 12px);
   transition:
     background-color 0.3s ease,
-    border-left 0.3s ease;
-  color: #ccc;
+    border-left 0.3s ease,
+    opacity 0.3s ease;
+  color: var(--schedule-text);
   border-radius: 5px;
-  background-color: #333;
+  background-color: var(--schedule-bg);
   border-left: 4px solid transparent;
 }
 
 .schedule-item:hover {
-  background-color: #444;
+  background-color: var(--schedule-bg-hover);
 }
 
 .schedule-item.current-day {
-  background-color: #2a4a2a;
-  border-left-color: #4caf50;
-  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+  background-color: var(--schedule-accent-bg);
+  border-left-color: var(--schedule-accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--schedule-accent) 30%, transparent);
   animation: highlightDay 1s ease-out;
+}
+
+.schedule-item.past {
+  opacity: 0.6;
 }
 
 @keyframes highlightDay {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 rgba(76, 175, 80, 0);
+    box-shadow: 0 0 0 color-mix(in srgb, var(--schedule-accent) 0%, transparent);
   }
   50% {
     transform: scale(1.03);
-    box-shadow: 0 0 25px rgba(76, 175, 80, 0.6);
+    box-shadow: 0 0 25px color-mix(in srgb, var(--schedule-accent) 60%, transparent);
   }
   100% {
     transform: scale(1);
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--schedule-accent) 30%, transparent);
   }
 }
 
-.schedule-item b {
-  color: #ffcc00;
+.day-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge-today {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--schedule-badge-bg);
+  color: var(--schedule-badge-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.day-content {
+  color: var(--schedule-emphasis);
 }
 
 .schedule-item a {
   transition: color 0.3s ease;
   text-decoration: none;
-  color: #00bcd4;
+  color: var(--schedule-link);
 }
 
 .schedule-item a:hover {
-  color: #ffcc00;
+  color: var(--schedule-emphasis);
+  text-decoration: underline;
+}
+
+.schedule-item a:focus-visible {
+  outline: 2px solid var(--schedule-emphasis);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 </style>
