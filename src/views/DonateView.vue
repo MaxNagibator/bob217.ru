@@ -1,8 +1,17 @@
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const goBack = (): void => {
+  router.back()
+}
+</script>
 
 <template>
   <div class="donate">
     <div class="donate-container">
+      <button class="back-button" @click="goBack" aria-label="Вернуться назад">← Назад</button>
       <h2>
         Поддержки каналов "дот нет помойка", "лучик света", "игровая дрисня", "фильмы с максимчиком"
       </h2>
@@ -96,6 +105,29 @@
   background-color: #444;
 }
 
+.back-button {
+  padding: 0.75rem 1.5rem;
+  margin-bottom: 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  transform: translateX(-5px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.back-button:active {
+  transform: translateX(-3px);
+}
+
 @media (max-width: 768px) {
   .donate-container {
     max-width: 100%;
@@ -103,6 +135,11 @@
 
   .donate-container h2 {
     font-size: 1.25rem;
+  }
+
+  .back-button {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
   }
 }
 </style>

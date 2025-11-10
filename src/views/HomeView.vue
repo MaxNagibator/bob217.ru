@@ -3,6 +3,7 @@ import { useCards } from '@/composables/useCards'
 import InfoBlock from '@/components/InfoBlock.vue'
 import CardSection from '@/components/CardSection.vue'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
+import PiggyBank from '@/components/PiggyBank.vue'
 
 const { cardsData, loading, error } = useCards()
 </script>
@@ -25,6 +26,8 @@ const { cardsData, loading, error } = useCards()
         />
       </div>
     </div>
+
+    <PiggyBank />
   </ErrorBoundary>
 </template>
 
