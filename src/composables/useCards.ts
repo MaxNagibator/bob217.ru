@@ -11,7 +11,7 @@ export function useCards() {
       loading.value = true
       error.value = null
 
-      const response = await fetch('/src/assets/data/cards.json')
+      const response = await fetch('/data/cards.json')
       if (!response.ok) {
         throw new Error(`Failed to load cards: ${response.statusText}`)
       }
