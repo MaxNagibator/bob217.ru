@@ -169,9 +169,9 @@ onBeforeUnmount(() => {
 <style scoped>
 .piggy-bank-container {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 9999;
+  bottom: var(--spacing-lg);
+  right: var(--spacing-lg);
+  z-index: var(--z-fixed);
 }
 
 .piggy-bank {
@@ -183,7 +183,7 @@ onBeforeUnmount(() => {
   user-select: none;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform var(--transition-fast);
   display: inline-block;
 }
 
@@ -199,15 +199,16 @@ onBeforeUnmount(() => {
   position: absolute;
   bottom: 100%;
   right: 0;
-  margin-bottom: 10px;
-  background: rgba(0, 0, 0, 0.85);
-  color: white;
-  padding: 8px 12px;
-  border-radius: 8px;
+  margin-bottom: var(--spacing-sm);
+  background: rgba(0, 0, 0, 0.9);
+  color: var(--color-text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
   white-space: nowrap;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-bg-tertiary);
 }
 
 .message::after {
@@ -216,7 +217,7 @@ onBeforeUnmount(() => {
   top: 100%;
   right: 20px;
   border: 6px solid transparent;
-  border-top-color: rgba(0, 0, 0, 0.85);
+  border-top-color: rgba(0, 0, 0, 0.9);
 }
 
 .jumping {
@@ -288,7 +289,7 @@ onBeforeUnmount(() => {
 
 .message-enter-active,
 .message-leave-active {
-  transition: all 0.3s ease;
+  transition: all var(--transition-base);
 }
 
 .message-enter-from {
@@ -303,8 +304,8 @@ onBeforeUnmount(() => {
 
 @media (max-width: 768px) {
   .piggy-bank-container {
-    bottom: 15px;
-    right: 15px;
+    bottom: var(--spacing-md);
+    right: var(--spacing-md);
   }
 
   .piggy {
@@ -312,8 +313,8 @@ onBeforeUnmount(() => {
   }
 
   .message {
-    font-size: 12px;
-    padding: 6px 10px;
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
   }
 }
 </style>

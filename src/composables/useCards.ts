@@ -8,9 +8,9 @@ export function useCards() {
   const error = ref<Error | null>(null)
 
   const loadCards = async () => {
-      loading.value = true
-      cardsData.value = cardsJson
-      loading.value = false
+    loading.value = true
+    cardsData.value = cardsJson
+    loading.value = false
   }
 
   onMounted(() => {
