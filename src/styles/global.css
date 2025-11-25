@@ -4,31 +4,44 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  font-family: 'Roboto', sans-serif;
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 20px 0;
-  color: #fff;
-  background-color: #212121;
+  font-family: var(--font-family-base);
+  line-height: var(--line-height-base);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-primary);
+}
+
+a {
+  transition: color var(--transition-fast);
+  text-decoration: none;
+  color: var(--color-link);
+}
+
+a:hover {
+  color: var(--color-link-hover);
 }
 
 h1 {
-  font-family: 'Poppins', sans-serif;
-  font-size: 2.5rem;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-4xl);
   font-weight: bold;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin: 2rem 0;
-  padding: 1rem 0;
+  margin: var(--spacing-xl) 0;
+  padding: var(--spacing-md) 0;
   transition: background-position 2s ease;
   text-align: center;
-  color: #fff;
-  background: linear-gradient(90deg, #ffcc00, #ff6699, #00bcd4, #ffcc00);
+  color: var(--color-text-primary);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
+  background-clip: text;
   background-size: 300% 100%;
   -webkit-text-fill-color: transparent;
 }
@@ -43,8 +56,8 @@ h1::after {
   width: 0;
   height: 3px;
   content: '';
-  transition: width 0.5s ease;
-  background-color: #ffcc00;
+  transition: width var(--transition-slow);
+  background-color: var(--color-accent);
 }
 
 h1::before {
@@ -65,21 +78,45 @@ h1:hover::after {
 }
 
 h1:hover {
-  color: #ffcc00;
-  text-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
+  text-shadow: var(--shadow-glow);
 }
 
 h2 {
-  font-size: 1.5rem;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  color: #fff;
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-2xl);
+  margin-top: var(--spacing-xl);
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-primary);
+}
+
+h3 {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-xl);
+  margin-top: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
+  color: var(--color-text-primary);
+}
+
+.sr-only {
+  position: absolute;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (max-width: 768px) {
   h1 {
-    font-size: 2rem;
-    margin: 1.5rem 0;
-    padding-bottom: 0.75rem;
+    font-size: var(--font-size-3xl);
+    margin: var(--spacing-lg) 0;
+    padding-bottom: var(--spacing-sm);
+  }
+
+  h2 {
+    font-size: var(--font-size-xl);
   }
 }
