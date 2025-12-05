@@ -1,0 +1,273 @@
+<script lang="ts" setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
+import { Home, FileText, Info, Heart, PiggyBank, type LucideIcon } from 'lucide-vue-next'
+
+interface NavLink {
+  to: string
+  label: string
+  icon: LucideIcon
+}
+
+const route = useRoute()
+const isMenuOpen = ref(false)
+const isScrolled = ref(false)
+
+const navLinks: NavLink[] = [
+  { to: '/', label: 'Главная', icon: Home },
+  { to: '/resume', label: 'Резюме', icon: FileText },
+  { to: '/about', label: 'О нас', icon: Info },
+  { to: '/donate', label: 'Донат', icon: Heart },
+]
+
+const toggleMenu = (): void => {
+  isMenuOpen.value = !isMenuOpen.value
+  document.body.style.overflow = isMenuOpen.value ? 'hidden' : ''
+}
+
+const closeMenu = (): void => {
+  isMenuOpen.value = false
+  document.body.style.overflow = ''
+}
+
+const handleScroll = (): void => {
+  isScrolled.value = window.scrollY > 20
+}
+
+const isActive = (path: string): boolean => {
+  return route.path === path
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+  handleScroll()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleScroll)
+  document.body.style.overflow = ''
+})
+</script>
+
+<template>
+  <header :class="['nav-header', { scrolled: isScrolled }]">
+    <nav class="nav-container">
+      <RouterLink to="/" class="nav-logo" @click="closeMenu">
+        <PiggyBank class="logo-icon" :size="28" />
+        <span class="logo-text">bob217</span>
+      </RouterLink>
+
+      <button
+        class="nav-toggle"
+        :class="{ active: isMenuOpen }"
+        @click="toggleMenu"
+        aria-label="Меню навигации"
+        :aria-expanded="isMenuOpen"
+      >
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+
+      <div :class="['nav-menu', { open: isMenuOpen }]">
+        <RouterLink
+          v-for="link in navLinks"
+          :key="link.to"
+          :to="link.to"
+          :class="['nav-link', { active: isActive(link.to) }]"
+          @click="closeMenu"
+        >
+          <component :is="link.icon" class="nav-icon" :size="18" />
+          <span class="nav-label">{{ link.label }}</span>
+        </RouterLink>
+      </div>
+
+      <div v-if="isMenuOpen" class="nav-overlay" @click="closeMenu"></div>
+    </nav>
+  </header>
+</template>
+
+<style scoped>
+.nav-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-sticky);
+  background: transparent;
+  transition:
+    background var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.nav-header.scrolled {
+  background: rgba(33, 33, 33, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-md);
+}
+
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: var(--max-width-content);
+  margin: 0 auto;
+  padding: var(--spacing-md) var(--spacing-lg);
+  height: var(--nav-height);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  text-decoration: none;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+  font-size: var(--font-size-xl);
+  transition: transform var(--transition-fast);
+}
+
+.nav-logo:hover {
+  transform: scale(1.05);
+}
+
+.logo-icon {
+  color: var(--color-accent);
+  animation: wiggle 2s ease-in-out infinite;
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+
+.logo-text {
+  background: var(--gradient-primary);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.nav-link:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-tertiary);
+}
+
+.nav-link.active {
+  color: var(--color-accent);
+  background: rgba(255, 204, 0, 0.1);
+}
+
+.nav-icon {
+  font-size: var(--font-size-base);
+}
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: calc(var(--z-sticky) + 10);
+}
+
+.hamburger-line {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--color-text-primary);
+  border-radius: var(--radius-full);
+  transition: all var(--transition-base);
+}
+
+.nav-toggle.active .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.nav-toggle.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle.active .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+.nav-overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: flex;
+  }
+
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: var(--spacing-md);
+    width: 280px;
+    padding: var(--spacing-xl);
+    background: var(--color-bg-secondary);
+    transform: translateX(100%);
+    transition: transform var(--transition-base);
+    z-index: var(--z-sticky);
+  }
+
+  .nav-menu.open {
+    transform: translateX(0);
+  }
+
+  .nav-link {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: var(--font-size-lg);
+  }
+
+  .nav-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: calc(var(--z-sticky) - 1);
+  }
+}
+</style>

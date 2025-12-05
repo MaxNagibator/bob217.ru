@@ -32,7 +32,7 @@ const goHome = () => {
   flex-direction: column;
   justify-content: center;
   min-height: 100vh;
-  padding: 2rem;
+  padding: var(--spacing-xl);
 }
 
 .error-container {
@@ -41,45 +41,75 @@ const goHome = () => {
   flex-direction: column;
   justify-content: center;
   max-width: 400px;
-  padding: 2rem;
-  border-radius: 10px;
-  background-color: #333;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  padding: var(--spacing-2xl);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg-secondary);
+  box-shadow: var(--shadow-md);
+  text-align: center;
 }
 
 .error-code {
-  font-size: 3rem;
+  font-family: var(--font-family-heading);
+  font-size: 6rem;
   font-weight: bold;
-  margin-bottom: 1rem;
-  color: #ffcc00;
+  line-height: 1;
+  margin-bottom: var(--spacing-md);
+  background: var(--gradient-primary);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .error-message {
-  font-size: 1.125rem;
-  margin-bottom: 2rem;
-  text-align: center;
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--spacing-xl);
+  color: var(--color-text-secondary);
 }
 
 .error-buttons {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 
 .error-button {
-  font-size: 1rem;
-  padding: 1rem 2rem;
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  padding: var(--spacing-md) var(--spacing-xl);
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  color: #fff;
+  transition: all var(--transition-base);
+  color: var(--color-text-primary);
   border: none;
-  border-radius: 10px;
-  background-color: #444;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-tertiary);
 }
 
 .error-button:hover {
-  color: #212121;
-  background-color: #ffcc00;
+  color: var(--color-bg-primary);
+  background-color: var(--color-accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+.error-button:first-child {
+  background: var(--gradient-button);
+}
+
+.error-button:first-child:hover {
+  background: var(--gradient-button-hover);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 </style>

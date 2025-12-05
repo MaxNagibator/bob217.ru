@@ -11,15 +11,18 @@ defineProps<Props>()
 </script>
 
 <template>
-  <h2>{{ title }}</h2>
-  <div class="section-container">
-    <ProjectCard
-      v-for="card in cards"
-      :key="card.title"
-      v-memo="[card.title, card.description]"
-      :card="card"
-    />
-  </div>
+  <section class="card-section">
+    <h2>{{ title }}</h2>
+    <div class="section-container">
+      <ProjectCard
+        v-for="(card, index) in cards"
+        :key="card.title"
+        v-memo="[card.title, card.description]"
+        :card="card"
+        :index="index"
+      />
+    </div>
+  </section>
 </template>
 
 <style scoped>
