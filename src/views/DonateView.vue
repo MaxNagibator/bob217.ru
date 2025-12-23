@@ -4,7 +4,7 @@ import { Heart, MessageCircle, Gift, Bitcoin, Copy, Check, ArrowRight } from 'lu
 
 const { copied, copy } = useClipboard()
 
-const CRYPTO_ADDRESS = '0x79373a0523c4fb5917a31c968c190bc3d188641a'
+const CRYPTO_ADDRESS = '0x288debec7c0b441b69b0e25fc7d6c8ec02883055'
 
 const copyAddress = (): void => {
   copy(CRYPTO_ADDRESS)
@@ -26,12 +26,10 @@ const copyAddress = (): void => {
         <MessageCircle class="telegram-icon" :size="32" />
         <div class="telegram-content">
           <span class="telegram-label">Telegram</span>
-          <a
-            href="https://t.me/bobito217"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="telegram-link"
-          >
+          <a href="https://t.me/bobito217"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="telegram-link">
             @bobito217
           </a>
         </div>
@@ -43,12 +41,10 @@ const copyAddress = (): void => {
           <h3>Донаты через DonateStream</h3>
         </div>
         <p class="section-description">Пожертвования можно кидать сюды</p>
-        <a
-          class="donate-link"
-          href="https://donate.stream/bob217"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a class="donate-link"
+           href="https://donate.stream/bob217"
+           target="_blank"
+           rel="noopener noreferrer">
           donate.stream/bob217
           <ArrowRight class="link-arrow" :size="18" />
         </a>
@@ -58,17 +54,15 @@ const copyAddress = (): void => {
       <div class="donate-section crypto">
         <div class="section-header">
           <Bitcoin class="section-icon" :size="28" />
-          <h3>Криптовалюта (USDC)</h3>
+          <h3>Криптовалюта USDC/USDT/BTC/ETH BEP20</h3>
         </div>
         <p class="section-description">Криптой сюда</p>
         <div class="crypto-address-wrapper">
           <code class="crypto-address">{{ CRYPTO_ADDRESS }}</code>
-          <button
-            class="copy-button"
-            :class="{ copied }"
-            @click="copyAddress"
-            :aria-label="copied ? 'Скопировано!' : 'Скопировать адрес'"
-          >
+          <button class="copy-button"
+                  :class="{ copied }"
+                  @click="copyAddress"
+                  :aria-label="copied ? 'Скопировано!' : 'Скопировать адрес'">
             <Check v-if="copied" class="copy-icon" :size="18" />
             <Copy v-else class="copy-icon" :size="18" />
             <span class="copy-text">{{ copied ? 'Скопировано!' : 'Копировать' }}</span>
