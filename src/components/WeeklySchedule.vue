@@ -40,17 +40,17 @@ const LINKS = {
 const schedule: readonly ScheduleDay[] = [
   {
     day: DayOfWeek.Monday,
-    description: 'Работы по основной задаче.',
+    description: 'Оффлайн видосик. Работы по основной задаче. Изучение rutube трафика.',
     link: LINKS.STREAM,
   },
   {
     day: DayOfWeek.Tuesday,
-    description: 'Оффлайн видосик. Переезд на linux.',
+    description: 'Оффлайн видосик. Работы по основной задаче. Изучение rutube трафика.',
     link: LINKS.YOUTUBE,
   },
   {
     day: DayOfWeek.Wednesday,
-    description: 'Работы по основной задаче.',
+    description: 'Оффлайн видосик. Работы по основной задаче. Изучение rutube трафика.',
     link: LINKS.STREAM,
   },
   {
