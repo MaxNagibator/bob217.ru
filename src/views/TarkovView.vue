@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useTarkovTime, getTarkovStatus } from '@/composables/useTarkovTime'
 import {
   Sun,
@@ -55,6 +55,14 @@ const {
   startCraft,
   resetCraft,
 } = useTarkovCraft()
+
+watch(isCrafting, (newVal) => {
+  if (!newVal) {
+    usePostCraftTimings.value = false
+    localStorage.setItem('tarkov_use_post_craft', 'false')
+    planningOffset.value = 0
+  }
+})
 
 const effectiveTerminalStatus = computed(() => {
   let baseTime = Date.now()
@@ -192,28 +200,29 @@ const nextExposureAfterCraft = computed(() => {
           </section>
 
           <section class="grid-section">
-            <div class="section-header">
-              <div class="title-with-nav">
-                <h2 class="section-title">ЛОКАЦИЯ: ТЕРМИНАЛ</h2>
-                <div class="window-navigation">
-                  <button
-                    class="nav-btn"
-                    @click="planningOffset--"
-                    title="Предыдущее окно"
-                    :disabled="planningOffset <= 0"
-                  >
-                    <ChevronLeft :size="16" />
-                  </button>
+            <h2 class="section-title">ЛОКАЦИЯ: ТЕРМИНАЛ</h2>
+
+            <div class="section-controls">
+              <div class="window-navigation">
+                <button
+                  class="nav-btn"
+                  @click="planningOffset--"
+                  title="Предыдущее окно"
+                  :disabled="planningOffset <= 0"
+                >
+                  <ChevronLeft :size="16" />
+                </button>
+                <div class="nav-status">
                   <span class="nav-label" :class="{ 'is-active': planningOffset > 0 }">
                     {{ planningOffset > 0 ? `ЦИКЛ +${planningOffset}` : 'ТЕКУЩИЕ ОКНА' }}
                   </span>
-                  <button class="nav-btn" @click="planningOffset++" title="Следующее окно">
-                    <ChevronRight :size="16" />
-                  </button>
                   <button v-if="planningOffset > 0" class="nav-reset" @click="planningOffset = 0">
                     СБРОС
                   </button>
                 </div>
+                <button class="nav-btn" @click="planningOffset++" title="Следующее окно">
+                  <ChevronRight :size="16" />
+                </button>
               </div>
 
               <div v-if="isCrafting" class="planning-toggle-container">
@@ -232,7 +241,15 @@ const nextExposureAfterCraft = computed(() => {
             <div class="cards-row">
               <TarkovCard
                 title="ДОСТУПНО (ЗОНА 1)"
-                :variant="effectiveTerminalStatus.left.isOpen ? 'success' : 'danger'"
+                :variant="
+                  effectiveTerminalStatus.isPlanned &&
+                  isLeftNearest &&
+                  !effectiveTerminalStatus.left.isOpen
+                    ? 'warning'
+                    : effectiveTerminalStatus.left.isOpen
+                      ? 'success'
+                      : 'danger'
+                "
                 :active="isLeftNearest"
                 :subtext="'РЕЖИМ: 22:00 - 04:00'"
               >
@@ -278,7 +295,15 @@ const nextExposureAfterCraft = computed(() => {
 
               <TarkovCard
                 title="ДОСТУПНО (ЗОНА 2)"
-                :variant="effectiveTerminalStatus.right.isOpen ? 'success' : 'danger'"
+                :variant="
+                  effectiveTerminalStatus.isPlanned &&
+                  !isLeftNearest &&
+                  !effectiveTerminalStatus.right.isOpen
+                    ? 'warning'
+                    : effectiveTerminalStatus.right.isOpen
+                      ? 'success'
+                      : 'danger'
+                "
                 :active="!isLeftNearest"
                 :subtext="'РЕЖИМ: 22:00 - 04:00'"
               >
@@ -611,12 +636,7 @@ const nextExposureAfterCraft = computed(() => {
 }
 
 .terminal-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem 0;
-  text-align: center;
+  position: relative;
 }
 
 .hero-label {
@@ -681,6 +701,10 @@ const nextExposureAfterCraft = computed(() => {
   animation: pulse-border-danger 3s infinite;
 }
 
+.tarkov-card.is-active.variant-warning {
+  animation: pulse-border-warning 3s infinite;
+}
+
 @keyframes pulse-border-success {
   0%,
   100% {
@@ -702,6 +726,18 @@ const nextExposureAfterCraft = computed(() => {
   50% {
     border-color: #c90000;
     box-shadow: 0 0 25px rgba(139, 0, 0, 0.4);
+  }
+}
+
+@keyframes pulse-border-warning {
+  0%,
+  100% {
+    border-color: #4a3f28;
+    box-shadow: 0 0 15px rgba(217, 163, 52, 0.2);
+  }
+  50% {
+    border-color: var(--tk-orange);
+    box-shadow: 0 0 25px rgba(217, 163, 52, 0.4);
   }
 }
 
@@ -887,58 +923,37 @@ const nextExposureAfterCraft = computed(() => {
   }
 }
 
-.section-header {
+.section-controls {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1.5rem;
   flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.title-with-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  padding: 0 0.5rem;
 }
 
 .window-navigation {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-left: 1rem;
+  gap: 0.75rem;
 }
 
-.nav-btn {
-  background: var(--tk-border);
-  border: 1px solid var(--tk-olive);
-  color: var(--tk-olive);
-  padding: 4px;
-  cursor: pointer;
+.nav-status {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.nav-btn:hover:not(:disabled) {
-  background: var(--tk-olive);
-  color: #000;
-}
-
-.nav-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-  border-color: #333;
+  min-width: 100px;
 }
 
 .nav-label {
   font-family: 'Oswald', sans-serif;
-  font-size: 0.8rem;
-  width: 80px;
-  text-align: center;
-  color: var(--tk-olive);
+  font-size: 0.75rem;
+  color: var(--tk-olive-dark);
+  text-transform: uppercase;
   letter-spacing: 1px;
+  line-height: 1;
+  text-align: center;
 }
 
 .nav-label.is-active {
@@ -952,40 +967,100 @@ const nextExposureAfterCraft = computed(() => {
   font-size: 0.65rem;
   font-weight: 700;
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 0;
+  margin-top: 2px;
   text-decoration: underline;
-  text-transform: uppercase;
+}
+
+.nav-btn {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--tk-olive-dark);
+  color: var(--tk-olive);
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: var(--tk-olive-dark);
+  color: var(--tk-highlight);
+  border-color: var(--tk-olive);
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: #222;
 }
 
 .planning-toggle {
   background: rgba(217, 163, 52, 0.05);
   padding: 4px 12px;
-  border-radius: 4px;
   border: 1px solid rgba(217, 163, 52, 0.2);
 }
 
+.terminal-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0;
+  text-align: center;
+  min-height: 180px;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+
 .terminal-hero.is-planned {
-  border: 1px dashed var(--tk-orange);
-  background: rgba(217, 163, 52, 0.05);
-  padding: 1rem;
-  margin: 0.5rem 0;
-  position: relative;
+  border: 1px solid rgba(217, 163, 52, 0.4);
+  background:
+    linear-gradient(rgba(217, 163, 52, 0.03), rgba(217, 163, 52, 0.03)),
+    repeating-linear-gradient(
+      45deg,
+      rgba(217, 163, 52, 0.02),
+      rgba(217, 163, 52, 0.02) 10px,
+      transparent 10px,
+      transparent 20px
+    );
 }
 
 .planned-badge {
   position: absolute;
-  top: -8px;
-  right: 10px;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--tk-orange);
   color: #000;
-  padding: 2px 8px;
-  font-size: 0.65rem;
-  font-weight: 800;
+  padding: 1px 12px;
+  font-size: 0.7rem;
+  font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  border-radius: 2px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1.5px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
   z-index: 5;
+}
+
+.planned-badge::before,
+.planned-badge::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--tk-bg);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.planned-badge::before {
+  left: -2px;
+}
+.planned-badge::after {
+  right: -2px;
 }
 
 .industrial-panel {

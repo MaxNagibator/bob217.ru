@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
 const emit = defineEmits<{
   (e: 'ready'): void
@@ -8,22 +8,33 @@ const emit = defineEmits<{
 const lines = ref<string[]>([])
 const isComplete = ref(false)
 
+const pirateExtra = [
+  'ПОДКЛЮЧЕНИЕ К ПИРАТСКОМУ КАНАЛУ... [YO-HO-HO]',
+  'ПРОТОКОЛ ПРОВЕРКИ ПЕРИМЕТРА: "ЭЙ, ДРУЖОК, ТЫ ПОТЕРЯЛСЯ?" [OK]',
+  'ОБНАРУЖЕН ПАКЕТ: "СКУФЧИК_2025" ... [ПРИНЯТО]',
+  'СИГНАЛ ТРЕВОГИ: "МУТАНТЫ_ИЗ_КАНАЛИЗАЦИИ" ... [ПРОВЕРКА]',
+  'СИНХРОНИЗАЦИЯ С РОФЛ-ПАКЕТОМ... [ГОТОВО]',
+]
+
 const bootText = [
-  'INITIALIZING TERRAGROUP SECURE CONNECTION...',
-  'VERIFYING ENCRYPTION KEYS... [OK]',
-  'ESTABLISHING SATELLITE UPLINK... [OK]',
-  'SYNCING WITH NORVINSK REGION SERVERS... [OK]',
-  'LOADING TEMPORAL DATA STREAMS... [OK]',
-  'DECODING SIGNAL... 100%',
-  'SYSTEM READY.',
+  'ИНИЦИАЛИЗАЦИЯ ЗАЩИЩЁННОГО КАНАЛА TERRAGROUP...',
+  'ПРОВЕРКА КЛЮЧ-КАРТ ДОСТУПА В "ЛАБОРАТОРИЮ"... [OK]',
+  'ПОИСК АКТИВНЫХ МАЯКОВ В НОРВИНСКОЙ ОБЛАСТИ... [OK]',
+  'СИНХРОНИЗАЦИЯ СО СХРОНОМ И ПОДСЧЁТ ПАТРОНОВ... [OK]',
+  'АНАЛИЗ АКТИВНОСТИ ГРУППИРОВКИ "ДИКИЕ"... [OK]',
+  'ПРОВЕРКА СТАТУСА КОНТЕЙНЕРА KAPPA... [НАЙДЕН]',
+  'ПОИСК ТОЧЕК ЭВАКУАЦИИ... 100%',
+  'ДЕШИФРОВКА ПЕРЕХВАТА: "ЧИКИ-БРИКИ И В ДАМКИ!"',
+  ...pirateExtra,
+  'СИСТЕМА ГОТОВА. УДАЧИ В РЕЙДЕ.',
 ]
 
 onMounted(async () => {
   for (const line of bootText) {
-    await new Promise((r) => setTimeout(r, Math.random() * 300 + 100))
+    await new Promise((r) => setTimeout(r, Math.random() * 400 + 150))
     lines.value.push(line)
   }
-  await new Promise((r) => setTimeout(r, 800))
+  await new Promise((r) => setTimeout(r, 1000))
   isComplete.value = true
   emit('ready')
 })
@@ -46,37 +57,61 @@ onMounted(async () => {
 .boot-screen {
   position: absolute;
   inset: 0;
-  background-color: #000;
+  background-color: #0d0d0d;
   z-index: 100;
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
   padding: 40px;
   font-family: 'Consolas', 'Monaco', monospace;
-  color: var(--tk-olive, #5a633a);
+  color: var(--tk-olive, #7e8a56);
   overflow: hidden;
+}
+
+.boot-screen::after {
+  content: ' ';
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size:
+    100% 2px,
+    3px 100%;
+  pointer-events: none;
+  z-index: 101;
 }
 
 .boot-container {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
 }
 
 .boot-line {
-  font-size: 1.2rem;
-  letter-spacing: 1px;
-  animation: fadeIn 0.1s ease-out;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  animation: fadeIn 0.15s ease-out;
+  text-transform: uppercase;
 }
 
 .prefix {
-  color: var(--tk-orange, #d9a334);
-  margin-right: 10px;
+  color: var(--tk-orange, #c7922d);
+  margin-right: 12px;
+  font-weight: bold;
 }
 
 .typing-cursor {
+  background-color: var(--tk-olive, #7e8a56);
+  width: 10px;
+  height: 1.2rem;
+  display: inline-block;
   animation: blink 1s step-end infinite;
 }
 
@@ -93,11 +128,11 @@ onMounted(async () => {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(5px);
+    transform: translateX(-10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 </style>
