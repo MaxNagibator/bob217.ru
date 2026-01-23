@@ -9,7 +9,10 @@ defineProps<{
 </script>
 
 <template>
-  <div class="tarkov-card" :class="{ 'is-active': active, 'is-loading': loading }">
+  <div
+    class="tarkov-card"
+    :class="[{ 'is-active': active, 'is-loading': loading }, variant ? `variant-${variant}` : '']"
+  >
     <div class="card-corner corner-tl"></div>
     <div class="card-corner corner-tr"></div>
     <div class="card-corner corner-bl"></div>
@@ -108,7 +111,49 @@ defineProps<{
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: var(--tk-orange, #d9a334);
+  color: var(--card-accent, var(--tk-orange, #d9a334));
+}
+
+.variant-success {
+  --tk-border: #2d4d2b;
+  --card-accent: #5a633a;
+  box-shadow: inset 0 0 15px rgba(45, 77, 43, 0.1);
+}
+
+.variant-danger {
+  --tk-border: #5a1414;
+  --card-accent: #8b0000;
+  box-shadow: inset 0 0 15px rgba(90, 20, 20, 0.1);
+}
+
+.variant-warning {
+  --tk-border: #4a3f28;
+  --card-accent: var(--tk-orange);
+}
+
+.variant-success .card-corner,
+.variant-success {
+  border-color: #5a633a;
+}
+
+.variant-danger .card-corner,
+.variant-danger {
+  border-color: #8b0000;
+}
+
+.variant-warning .card-corner,
+.variant-warning {
+  border-color: #4a3f28;
+}
+
+.tarkov-card.is-active.variant-success {
+  box-shadow: 0 0 20px rgba(90, 99, 58, 0.3);
+  border-color: #7a8a4a;
+}
+
+.tarkov-card.is-active.variant-danger {
+  box-shadow: 0 0 20px rgba(139, 0, 0, 0.3);
+  border-color: #a30000;
 }
 
 .card-title {
