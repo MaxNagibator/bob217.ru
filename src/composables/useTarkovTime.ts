@@ -14,6 +14,7 @@ export interface TarkovStatus {
     formattedCountdown: string
     realEventTime: string
     realClosingTime: string
+    windowRange: string
   }
 }
 
@@ -45,18 +46,18 @@ export function getTarkovStatus(leftSide: boolean, baseTime: number = Date.now()
     let hoursToWait = 22 - hours
     if (hoursToWait < 0) hoursToWait += 24
 
-    const totalGameMinutesLeft = hoursToWait * 60 + (60 - minutes)
+    const totalGameMinutesLeft = hoursToWait * 60 - minutes
     minutesToEvent = Math.round(totalGameMinutesLeft / 7)
 
-    nextEventText = `Открытие в`
+    nextEventText = `Открытие через`
   } else {
     let hoursLeft = 4 - hours
     if (hoursLeft < 0) hoursLeft += 24
 
-    const totalGameMinutesLeft = hoursLeft * 60 + (60 - minutes)
+    const totalGameMinutesLeft = hoursLeft * 60 - minutes
     minutesToEvent = Math.round(totalGameMinutesLeft / 7)
 
-    nextEventText = `Закрытие в`
+    nextEventText = `Закрытие через`
   }
 
   const eventAbsoluteTime = baseTime + minutesToEvent * 60 * 1000
@@ -100,6 +101,14 @@ export function getTarkovStatus(leftSide: boolean, baseTime: number = Date.now()
           minute: '2-digit',
         },
       ),
+      windowRange: (() => {
+        const closingTime = baseTime + minutesToClosingFromBase * 60 * 1000
+        const openingTime = isOpen
+          ? eventAbsoluteTime - Math.round((6 * 60) / 7) * 60 * 1000
+          : eventAbsoluteTime
+        const fmt = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        return `${fmt(new Date(openingTime))} - ${fmt(new Date(closingTime))}`
+      })(),
     },
   }
 }

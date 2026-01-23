@@ -65,6 +65,8 @@ watch(isCrafting, (newVal) => {
 })
 
 const effectiveTerminalStatus = computed(() => {
+  void leftZone.value.time
+
   let baseTime = Date.now()
   let isPlanned = false
 
@@ -261,24 +263,18 @@ const nextExposureAfterCraft = computed(() => {
                   class="terminal-hero"
                   :class="{ 'is-planned': effectiveTerminalStatus.isPlanned }"
                 >
-                  <div class="hero-label">
-                    {{ effectiveTerminalStatus.left.nextEventText }}
-                  </div>
                   <div v-if="effectiveTerminalStatus.isPlanned" class="planned-badge">
                     {{ effectiveTerminalStatus.planningLabel }}
                   </div>
-                  <div class="hero-time">{{ effectiveTerminalStatus.left.realEventTime }}</div>
-                  <div class="hero-countdown">
-                    ЧЕРЕЗ
+                  <div class="hero-range">{{ effectiveTerminalStatus.left.windowRange }}</div>
+                  <div
+                    class="hero-event"
+                    :class="effectiveTerminalStatus.left.isOpen ? 'is-closing' : 'is-opening'"
+                  >
+                    {{ effectiveTerminalStatus.left.nextEventText }}
                     <span class="countdown-value">
                       {{ effectiveTerminalStatus.left.formattedCountdown }}
                     </span>
-                  </div>
-                  <div class="hero-closing">
-                    ЗАКРЫТИЕ В
-                    <span class="highlight">{{
-                      effectiveTerminalStatus.left.realClosingTime
-                    }}</span>
                   </div>
                 </div>
 
@@ -315,24 +311,18 @@ const nextExposureAfterCraft = computed(() => {
                   class="terminal-hero"
                   :class="{ 'is-planned': effectiveTerminalStatus.isPlanned }"
                 >
-                  <div class="hero-label">
-                    {{ effectiveTerminalStatus.right.nextEventText }}
-                  </div>
                   <div v-if="effectiveTerminalStatus.isPlanned" class="planned-badge">
                     {{ effectiveTerminalStatus.planningLabel }}
                   </div>
-                  <div class="hero-time">{{ effectiveTerminalStatus.right.realEventTime }}</div>
-                  <div class="hero-countdown">
-                    ЧЕРЕЗ
+                  <div class="hero-range">{{ effectiveTerminalStatus.right.windowRange }}</div>
+                  <div
+                    class="hero-event"
+                    :class="effectiveTerminalStatus.right.isOpen ? 'is-closing' : 'is-opening'"
+                  >
+                    {{ effectiveTerminalStatus.right.nextEventText }}
                     <span class="countdown-value">
                       {{ effectiveTerminalStatus.right.formattedCountdown }}
                     </span>
-                  </div>
-                  <div class="hero-closing">
-                    ЗАКРЫТИЕ В
-                    <span class="highlight">{{
-                      effectiveTerminalStatus.right.realClosingTime
-                    }}</span>
                   </div>
                 </div>
 
@@ -656,6 +646,46 @@ const nextExposureAfterCraft = computed(() => {
   text-shadow: 0 0 30px rgba(217, 163, 52, 0.4);
   font-weight: 700;
   margin-bottom: 0.2rem;
+}
+
+.hero-range {
+  font-family: 'Oswald', sans-serif;
+  font-size: 3rem;
+  color: var(--tk-orange);
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(217, 163, 52, 0.3);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: 2px;
+}
+
+.hero-event {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.hero-event .countdown-value {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--tk-highlight);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.hero-event.is-opening {
+  color: var(--tk-olive);
+}
+
+.hero-event.is-closing {
+  color: var(--tk-danger);
 }
 
 .hero-closing {
