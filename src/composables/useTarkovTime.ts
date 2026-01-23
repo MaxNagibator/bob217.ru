@@ -63,7 +63,9 @@ export function getTarkovStatus(leftSide: boolean, baseTime: number = Date.now()
   const eventAbsoluteTime = baseTime + minutesToEvent * 60 * 1000
   const realMinutesToNow = Math.round((eventAbsoluteTime - Date.now()) / 60000)
 
-  const displayMins = Math.max(0, realMinutesToNow)
+  const isPlanning = Math.abs(baseTime - Date.now()) > 10000
+
+  const displayMins = isPlanning ? minutesToEvent : Math.max(0, realMinutesToNow)
   const cdHoursFull = Math.floor(displayMins / 60)
   const cdMinsFull = displayMins % 60
   const realFormattedCountdown = `${cdHoursFull.toString().padStart(2, '0')}:${cdMinsFull.toString().padStart(2, '0')}`
