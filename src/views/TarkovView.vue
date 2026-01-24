@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Plus,
   Minus,
+  AlertTriangle,
+  HelpCircle,
 } from 'lucide-vue-next'
 import TarkovBoot from '@/components/tarkov/TarkovBoot.vue'
 import TarkovCard from '@/components/tarkov/TarkovCard.vue'
@@ -25,6 +27,7 @@ const isBooting = ref(localStorage.getItem('tarkov_skip_boot') !== 'true')
 const skipBootSetting = ref(localStorage.getItem('tarkov_skip_boot') === 'true')
 const usePostCraftTimings = ref(localStorage.getItem('tarkov_use_post_craft') === 'true')
 const planningOffset = ref(0)
+const showPlanningHelp = ref(false)
 
 const toggleBootSequence = () => {
   localStorage.setItem('tarkov_skip_boot', String(skipBootSetting.value))
@@ -65,6 +68,8 @@ watch(isCrafting, (newVal) => {
 })
 
 const effectiveTerminalStatus = computed(() => {
+  void leftZone.value.time
+
   let baseTime = Date.now()
   let isPlanned = false
 
@@ -79,9 +84,18 @@ const effectiveTerminalStatus = computed(() => {
     isPlanned = true
   }
 
+  const leftStatus = getTarkovStatus(true, baseTime).terminal
+  const rightStatus = getTarkovStatus(false, baseTime).terminal
+
   return {
-    left: getTarkovStatus(true, baseTime).terminal,
-    right: getTarkovStatus(false, baseTime).terminal,
+    left: {
+      ...leftStatus,
+      isTight: isPlanned && leftStatus.isOpen && leftStatus.minutesToEvent < 10,
+    },
+    right: {
+      ...rightStatus,
+      isTight: isPlanned && rightStatus.isOpen && rightStatus.minutesToEvent < 10,
+    },
     isPlanned: isPlanned,
     planningLabel: usePostCraftTimings.value ? 'ПОСЛЕ КРАФТА' : 'ПРОГНОЗ',
     offset: planningOffset.value,
@@ -143,6 +157,16 @@ const nextExposureAfterCraft = computed(() => {
   })
 
   return `${formattedDate} (${zoneName})`
+})
+
+const formattedCompletionTime = computed(() => {
+  if (!completionTime.value) return ''
+  return completionTime.value.toLocaleString([], {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 })
 </script>
 
@@ -225,18 +249,61 @@ const nextExposureAfterCraft = computed(() => {
                 </button>
               </div>
 
-              <div v-if="isCrafting" class="planning-toggle-container">
-                <label class="qol-setting planning-toggle">
-                  <input
-                    type="checkbox"
-                    v-model="usePostCraftTimings"
-                    @change="togglePostCraftMode"
-                  />
-                  <span class="checkbox-custom"></span>
-                  <span class="setting-label">ПЛАНИРОВАТЬ ПОД КРАФТ</span>
-                </label>
+              <div v-if="isCrafting" class="planning-controls-group">
+                <div class="planning-toggle-container">
+                  <label class="qol-setting planning-toggle">
+                    <input
+                      type="checkbox"
+                      v-model="usePostCraftTimings"
+                      @change="togglePostCraftMode"
+                    />
+                    <span class="checkbox-custom"></span>
+                    <span class="setting-label">ПЛАНИРОВАТЬ ПОД КРАФТ</span>
+                  </label>
+                </div>
+                <button
+                  class="help-toggle-btn"
+                  @click="showPlanningHelp = !showPlanningHelp"
+                  :class="{ 'is-active': showPlanningHelp }"
+                  title="Как это работает?"
+                >
+                  <HelpCircle :size="16" />
+                </button>
               </div>
             </div>
+
+            <div v-if="effectiveTerminalStatus.isPlanned" class="planning-target-badge">
+              <span class="badge-label">ПРОГНОЗ НА МОМЕНТ ГОТОВНОСТИ КРАФТА:</span>
+              <span class="badge-value">{{ formattedCompletionTime }}</span>
+            </div>
+
+            <transition name="slide-fade">
+              <div v-if="showPlanningHelp" class="planning-help-panel industrial-panel">
+                <div class="help-header">
+                  <HelpCircle :size="18" class="help-icon" />
+                  <h3>СПРАВКА ПО ПЛАНИРОВАНИЮ</h3>
+                </div>
+                <ul class="help-list">
+                  <li>
+                    <strong>Обычный режим:</strong> Таймеры показывают, сколько реально осталось до
+                    открытия или закрытия.
+                  </li>
+                  <li>
+                    <strong>Планирование под крафт:</strong> Мы переносимся в будущее — на момент,
+                    когда ваш текущий крафт будет завершен.
+                  </li>
+                  <li>
+                    <strong>Таймер в планировании:</strong> Показывает «запас времени», который у
+                    вас будет <strong>сразу после</strong> готовности крафта.
+                  </li>
+                  <li>
+                    <AlertTriangle :size="14" class="inline-icon color-danger" />
+                    <strong>Предупреждение:</strong> Если на карточке написано «МАЛО ВРЕМЕНИ»,
+                    значит у вас будет менее 10 минут, чтобы забрать предмет и зайти в рейд.
+                  </li>
+                </ul>
+              </div>
+            </transition>
 
             <div class="cards-row">
               <TarkovCard
@@ -261,24 +328,25 @@ const nextExposureAfterCraft = computed(() => {
                   class="terminal-hero"
                   :class="{ 'is-planned': effectiveTerminalStatus.isPlanned }"
                 >
-                  <div class="hero-label">
-                    {{ effectiveTerminalStatus.left.nextEventText }}
-                  </div>
-                  <div v-if="effectiveTerminalStatus.isPlanned" class="planned-badge">
+                  <div
+                    v-if="effectiveTerminalStatus.isPlanned"
+                    class="planned-badge"
+                    :class="{ 'is-tight': effectiveTerminalStatus.left.isTight }"
+                  >
                     {{ effectiveTerminalStatus.planningLabel }}
                   </div>
-                  <div class="hero-time">{{ effectiveTerminalStatus.left.realEventTime }}</div>
-                  <div class="hero-countdown">
-                    ЧЕРЕЗ
+                  <div v-if="effectiveTerminalStatus.left.isTight" class="tight-warning">
+                    <AlertTriangle :size="14" /> МАЛО ВРЕМЕНИ
+                  </div>
+                  <div class="hero-range">{{ effectiveTerminalStatus.left.windowRange }}</div>
+                  <div
+                    class="hero-event"
+                    :class="effectiveTerminalStatus.left.isOpen ? 'is-closing' : 'is-opening'"
+                  >
+                    {{ effectiveTerminalStatus.left.nextEventText }}
                     <span class="countdown-value">
                       {{ effectiveTerminalStatus.left.formattedCountdown }}
                     </span>
-                  </div>
-                  <div class="hero-closing">
-                    ЗАКРЫТИЕ В
-                    <span class="highlight">{{
-                      effectiveTerminalStatus.left.realClosingTime
-                    }}</span>
                   </div>
                 </div>
 
@@ -315,24 +383,25 @@ const nextExposureAfterCraft = computed(() => {
                   class="terminal-hero"
                   :class="{ 'is-planned': effectiveTerminalStatus.isPlanned }"
                 >
-                  <div class="hero-label">
-                    {{ effectiveTerminalStatus.right.nextEventText }}
-                  </div>
-                  <div v-if="effectiveTerminalStatus.isPlanned" class="planned-badge">
+                  <div
+                    v-if="effectiveTerminalStatus.isPlanned"
+                    class="planned-badge"
+                    :class="{ 'is-tight': effectiveTerminalStatus.right.isTight }"
+                  >
                     {{ effectiveTerminalStatus.planningLabel }}
                   </div>
-                  <div class="hero-time">{{ effectiveTerminalStatus.right.realEventTime }}</div>
-                  <div class="hero-countdown">
-                    ЧЕРЕЗ
+                  <div v-if="effectiveTerminalStatus.right.isTight" class="tight-warning">
+                    <AlertTriangle :size="14" /> МАЛО ВРЕМЕНИ
+                  </div>
+                  <div class="hero-range">{{ effectiveTerminalStatus.right.windowRange }}</div>
+                  <div
+                    class="hero-event"
+                    :class="effectiveTerminalStatus.right.isOpen ? 'is-closing' : 'is-opening'"
+                  >
+                    {{ effectiveTerminalStatus.right.nextEventText }}
                     <span class="countdown-value">
                       {{ effectiveTerminalStatus.right.formattedCountdown }}
                     </span>
-                  </div>
-                  <div class="hero-closing">
-                    ЗАКРЫТИЕ В
-                    <span class="highlight">{{
-                      effectiveTerminalStatus.right.realClosingTime
-                    }}</span>
                   </div>
                 </div>
 
@@ -410,6 +479,11 @@ const nextExposureAfterCraft = computed(() => {
               </div>
 
               <div v-if="isCrafting" class="crafting-body">
+                <div class="completion-hero">
+                  <span class="completion-label">КАРТА БУДЕТ ГОТОВА:</span>
+                  <span class="completion-time">{{ formattedCompletionTime }}</span>
+                </div>
+
                 <div class="progress-section">
                   <div class="progress-stats">
                     <span class="time-remaining">{{ formattedRemaining }}</span>
@@ -656,6 +730,46 @@ const nextExposureAfterCraft = computed(() => {
   text-shadow: 0 0 30px rgba(217, 163, 52, 0.4);
   font-weight: 700;
   margin-bottom: 0.2rem;
+}
+
+.hero-range {
+  font-family: 'Oswald', sans-serif;
+  font-size: 3rem;
+  color: var(--tk-orange);
+  line-height: 1;
+  text-shadow: 0 0 20px rgba(217, 163, 52, 0.3);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: 2px;
+}
+
+.hero-event {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.hero-event .countdown-value {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--tk-highlight);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.hero-event.is-opening {
+  color: var(--tk-olive);
+}
+
+.hero-event.is-closing {
+  color: var(--tk-danger);
 }
 
 .hero-closing {
@@ -908,6 +1022,141 @@ const nextExposureAfterCraft = computed(() => {
   }
 }
 
+.planning-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.help-toggle-btn {
+  background: rgba(90, 99, 58, 0.1);
+  border: 1px solid var(--tk-olive-dark);
+  color: var(--tk-olive);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 2px;
+}
+
+.help-toggle-btn:hover,
+.help-toggle-btn.is-active {
+  background: var(--tk-olive-dark);
+  color: var(--tk-highlight);
+  border-color: var(--tk-olive);
+}
+
+.planning-help-panel {
+  margin-top: -1rem;
+  margin-bottom: 2rem;
+  border-left: 4px solid var(--tk-orange);
+}
+
+.help-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.help-header h3 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1rem;
+  margin: 0;
+  color: var(--tk-orange);
+  letter-spacing: 1px;
+}
+
+.help-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.help-list li {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--tk-text);
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.help-list li::before {
+  content: '>';
+  position: absolute;
+  left: 0;
+  color: var(--tk-olive);
+  font-weight: 700;
+}
+
+.help-list strong {
+  color: var(--tk-highlight);
+}
+
+.tight-warning {
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--tk-danger);
+  color: #fff;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 2px;
+  box-shadow: 0 0 15px rgba(139, 0, 0, 0.4);
+  animation: pulse-danger 2s infinite;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.planned-badge.is-tight {
+  background: var(--tk-danger);
+  color: #fff;
+}
+
+.color-danger {
+  color: var(--tk-danger);
+}
+
+.inline-icon {
+  vertical-align: middle;
+  margin-top: -2px;
+}
+
+@keyframes pulse-danger {
+  0%,
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
+}
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
 @media (max-width: 768px) {
   .cards-row {
     grid-template-columns: 1fr;
@@ -1026,6 +1275,70 @@ const nextExposureAfterCraft = computed(() => {
       transparent 10px,
       transparent 20px
     );
+}
+
+.planning-target-badge {
+  background: rgba(217, 163, 52, 0.1);
+  border: 1px dashed var(--tk-orange);
+  padding: 8px 16px;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: 'Rajdhani', sans-serif;
+  animation: fade-in-pulse 4s infinite;
+}
+
+.badge-label {
+  font-weight: 700;
+  color: var(--tk-olive);
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.badge-value {
+  color: var(--tk-orange);
+  font-weight: 700;
+  font-family: 'Oswald', sans-serif;
+  font-size: 1rem;
+}
+
+.completion-hero {
+  background: linear-gradient(90deg, rgba(217, 163, 52, 0.05), transparent);
+  border-left: 4px solid var(--tk-orange);
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.completion-label {
+  font-size: 0.75rem;
+  color: var(--tk-olive);
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.completion-time {
+  font-family: 'Oswald', sans-serif;
+  font-size: 2rem;
+  color: var(--tk-orange);
+  font-weight: 700;
+  text-shadow: 0 0 15px rgba(217, 163, 52, 0.3);
+}
+
+@keyframes fade-in-pulse {
+  0%,
+  100% {
+    opacity: 0.8;
+    border-color: rgba(217, 163, 52, 0.4);
+  }
+  50% {
+    opacity: 1;
+    border-color: var(--tk-orange);
+  }
 }
 
 .planned-badge {
