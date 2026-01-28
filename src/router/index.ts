@@ -20,6 +20,11 @@ const router = createRouter({
       component: () => import('../views/DonateView.vue'),
     },
     {
+      path: '/tarkov',
+      name: 'tarkov',
+      component: () => import('../views/TarkovView.vue'),
+    },
+    {
       path: '/about',
       name: 'about',
       component: () => import('../views/AboutView.vue'),

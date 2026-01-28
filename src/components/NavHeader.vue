@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
-import { Home, FileText, Info, Heart, PiggyBank, type LucideIcon } from 'lucide-vue-next'
+import { Home, FileText, Info, Heart, PiggyBank, Clock, type LucideIcon } from 'lucide-vue-next'
 
 interface NavLink {
   to: string
@@ -18,6 +18,7 @@ const navLinks: NavLink[] = [
   { to: '/resume', label: 'Резюме', icon: FileText },
   { to: '/about', label: 'О нас', icon: Info },
   { to: '/donate', label: 'Донат', icon: Heart },
+  { to: '/tarkov', label: 'Тарков', icon: Clock },
 ]
 
 const toggleMenu = (): void => {
