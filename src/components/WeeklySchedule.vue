@@ -40,27 +40,27 @@ const LINKS = {
 const schedule: readonly ScheduleDay[] = [
   {
     day: DayOfWeek.Monday,
-    description: 'Оффлайн видосик. Работы по основной задаче. Изучение rutube трафика.',
+    description: 'Работы по основной задаче.',
     link: LINKS.STREAM,
   },
   {
     day: DayOfWeek.Tuesday,
-    description: 'Оффлайн видосик. Работы по основной задаче. Изучение rutube трафика.',
+    description: 'Работы по основной задаче.',
     link: LINKS.YOUTUBE,
   },
   {
     day: DayOfWeek.Wednesday,
-    description: 'Оффлайн видосик. Работы по основной задаче. Изучение rutube трафика.',
+    description: 'Работы по основной задаче.',
     link: LINKS.STREAM,
   },
   {
     day: DayOfWeek.Thursday,
-    description: 'Вопросы/Задачки для собеседования',
+    description: 'Работы по основной задаче. Вопросы/Задачки для собеседования временно отменено',
     link: LINKS.STREAM,
   },
   {
     day: DayOfWeek.Friday,
-    description: 'Обзор творений, присланных на ревью',
+    description: 'Работы по основной задаче. Обзор творений, присланных на ревью временно отменён',
     link: LINKS.STREAM,
   },
   {
