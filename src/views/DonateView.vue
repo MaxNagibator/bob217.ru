@@ -4,7 +4,7 @@ import { Heart, MessageCircle, Gift, Bitcoin, Copy, Check, ArrowRight } from 'lu
 
 const { copied, copy } = useClipboard()
 
-const CRYPTO_ADDRESS = '0x288debec7c0b441b69b0e25fc7d6c8ec02883055'
+const CRYPTO_ADDRESS = '0x09daec7735270c3dc16c3fcfae159f38352b606d'
 
 const copyAddress = (): void => {
   copy(CRYPTO_ADDRESS)
@@ -54,7 +54,7 @@ const copyAddress = (): void => {
       <div class="donate-section crypto">
         <div class="section-header">
           <Bitcoin class="section-icon" :size="28" />
-          <h3>Криптовалюта USDC/USDT/BTC/ETH BEP20</h3>
+          <h3>Криптовалюта USDT BEP20</h3>
         </div>
         <p class="section-description">Криптой сюда</p>
         <div class="crypto-address-wrapper">
