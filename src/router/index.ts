@@ -25,6 +25,11 @@ const router = createRouter({
       component: () => import('../views/TarkovView.vue'),
     },
     {
+      path: '/pulls',
+      name: 'pulls',
+      component: () => import('../views/PullRequestsView.vue'),
+    },
+    {
       path: '/about',
       name: 'about',
       component: () => import('../views/AboutView.vue'),
