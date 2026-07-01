@@ -18,6 +18,8 @@ const emit = defineEmits<{
   toggle: []
 }>()
 
+const iconSrc = computed(() => import.meta.env.BASE_URL + props.card.icon.replace(/^\//, ''))
+
 const linkLabel = computed(() => {
   try {
     const url = new URL(props.card.link)
@@ -31,7 +33,7 @@ const linkLabel = computed(() => {
 <template>
   <article :class="['card', { expanded }]" :style="{ '--i': index }">
     <header class="card-head">
-      <img :src="card.icon" alt="" class="card-icon" />
+      <img :src="iconSrc" alt="" class="card-icon" />
       <h3 class="card-title">
         <a :href="card.link" target="_blank" rel="noopener noreferrer">{{ card.title }}</a>
       </h3>
