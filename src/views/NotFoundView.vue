@@ -1,115 +1,137 @@
 <script lang="ts" setup>
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
+const route = useRoute()
 const router = useRouter()
 
-const goBack = () => {
-  router.back()
-}
-
-const goHome = () => {
-  router.push('/')
-}
+const goBack = () => router.back()
+const goHome = () => router.push('/')
 </script>
 
 <template>
-  <div class="error-page">
-    <div class="error-container">
-      <div class="error-code">404</div>
-      <div class="error-message">Страница не найдена</div>
-      <div class="error-buttons">
-        <button class="error-button" @click="goBack">Вернуться назад</button>
-        <button class="error-button" @click="goHome">На главную</button>
+  <div class="err">
+    <main class="term term--accent">
+      <p class="eyebrow"><span class="h">##</span> error</p>
+      <p class="cmd"><span class="p">$</span> git checkout {{ route.fullPath }}</p>
+      <div class="code">404</div>
+      <p class="fatal"><span class="kw">fatal:</span> страница не найдена</p>
+      <p class="hint">такого пути в этом репозитории нет.</p>
+      <div class="actions">
+        <button class="cmd-btn" @click="goBack"><span class="p">$</span> cd -</button>
+        <button class="cmd-btn" @click="goHome"><span class="p">$</span> cd ~/</button>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <style scoped>
-.error-page {
+.err {
   display: flex;
   align-items: center;
-  flex-direction: column;
   justify-content: center;
-  min-height: 100vh;
+  min-height: 60vh;
   padding: var(--spacing-xl);
 }
 
-.error-container {
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  justify-content: center;
-  max-width: 400px;
-  padding: var(--spacing-2xl);
+.term {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  overflow: hidden;
+  padding: var(--spacing-xl);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-bg-tertiary);
   border-radius: var(--radius-lg);
-  background-color: var(--color-bg-secondary);
-  box-shadow: var(--shadow-md);
-  text-align: center;
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-family-mono);
 }
 
-.error-code {
-  font-family: var(--font-family-heading);
-  font-size: 6rem;
-  font-weight: bold;
+.term::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--color-accent);
+}
+
+.term--accent {
+  --code-color: var(--color-accent);
+  --code-glow: rgba(255, 204, 0, 0.35);
+}
+
+.eyebrow {
+  margin: 0 0 var(--spacing-md);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.eyebrow .h {
+  color: var(--color-accent);
+}
+
+.cmd {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  word-break: break-all;
+}
+
+.cmd .p {
+  color: var(--color-accent);
+}
+
+.code {
+  margin: var(--spacing-sm) 0 var(--spacing-xs);
+  font-size: 5rem;
+  font-weight: 700;
   line-height: 1;
-  margin-bottom: var(--spacing-md);
-  background: var(--gradient-primary);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: gradient-shift 3s ease infinite;
+  color: var(--code-color);
+  text-shadow: 0 0 24px var(--code-glow);
 }
 
-@keyframes gradient-shift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.error-message {
+.fatal {
+  margin: var(--spacing-xs) 0 var(--spacing-sm);
   font-size: var(--font-size-lg);
-  margin-bottom: var(--spacing-xl);
-  color: var(--color-text-secondary);
+  color: var(--color-danger);
 }
 
-.error-buttons {
+.fatal .kw {
+  font-weight: 700;
+}
+
+.hint {
+  margin: 0 0 var(--spacing-xl);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: var(--spacing-md);
 }
 
-.error-button {
-  font-size: var(--font-size-base);
-  font-weight: 500;
-  padding: var(--spacing-md) var(--spacing-xl);
+.cmd-btn {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
   cursor: pointer;
-  transition: all var(--transition-base);
-  color: var(--color-text-primary);
-  border: none;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-bg-tertiary);
   border-radius: var(--radius-md);
-  background-color: var(--color-bg-tertiary);
+  transition: all var(--transition-base);
 }
 
-.error-button:hover {
-  color: var(--color-bg-primary);
-  background-color: var(--color-accent);
+.cmd-btn .p {
+  color: var(--color-accent);
+}
+
+.cmd-btn:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-accent);
   transform: translateY(-2px);
   box-shadow: var(--shadow-glow);
-}
-
-.error-button:first-child {
-  background: var(--gradient-button);
-}
-
-.error-button:first-child:hover {
-  background: var(--gradient-button-hover);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 </style>
