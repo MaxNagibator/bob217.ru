@@ -1,6 +1,30 @@
 {
   "Проекты": [
     {
+      "title": "MediaOrcestrator",
+      "icon": "/img/mediaorcestrator.png",
+      "short_description": "Заливает видосы на все площадки за тебя",
+      "description": [
+        "Заливаешь видосы на 5 площадок руками? Серьёзно? В 2026?",
+        "MediaOrcestrator берёт эту рутину на себя: настраиваешь цепочки YouTube → HDD → RuTube → VK, жмёшь кнопку – сам качает, конвертит, льёт и следит, чтобы метаданные не потерялись по дороге.",
+        "Превьюшки по шаблонам со слоями, комментарии со всех площадок в одном окне, граф связей синхронизации и бэкапы каждые 6 часов. Новая площадка – это просто DLL в папку с плагинами.",
+        "Написан на C#. WinForms. LiteDB в одном файле. Если хочется Electron с тремя гигами node_modules – это не сюда."
+      ],
+      "link": "https://github.com/MaxNagibator/MediaOrcestrator"
+    },
+    {
+      "title": "JuniorFactory",
+      "icon": "/img/juniorfactory.svg",
+      "short_description": "Курс для тех, кто хочет забуриться в айти",
+      "description": [
+        "JuniorFactory (Юниорная Мануфактура) – курс для самых маленьких и тех, кто только начинает свой путь в мире программирования.",
+        "17 уроков по нарастающей сложности: от основ C# и Git до PostgreSQL, ASP.NET Core, Entity Framework и автотестов на Selenium и Playwright.",
+        "Все уроки сопровождаются практическими примерами, а видео доступны на ютубе с резервными копиями на Rutube и VK Видео.",
+        "Вопросы можно задавать в комментариях к видео или прямо на стриме."
+      ],
+      "link": "https://github.com/MaxNagibator/JuniorFactory"
+    },
+    {
       "title": "Филочки",
       "icon": "/img/money.png",
       "short_description": "Личный финансовый помощник",
@@ -134,6 +158,22 @@
       "short_description": "Живые стримы на Twitch",
       "description": ["Смотри живые стримы на Twitch и будь в курсе всех событий."],
       "link": "https://www.twitch.tv/bobito217"
+    },
+    {
+      "title": "Резерв на Rutube",
+      "icon": "/img/rutube.svg",
+      "short_description": "Резервная санкционная копия 1",
+      "description": [
+        "Все видео и плейлисты продублированы на Rutube – на случай, если ютуб решит отдохнуть."
+      ],
+      "link": "https://rutube.ru/channel/38477324/"
+    },
+    {
+      "title": "Резерв на VK Видео",
+      "icon": "/img/vkvideo.svg",
+      "short_description": "Резервная санкционная копия 2",
+      "description": ["Вторая резервная копия канала – смотри на VK Видео, если так удобнее."],
+      "link": "https://vkvideo.ru/@bobito217"
     }
   ],
   "Другие ссылки": [
