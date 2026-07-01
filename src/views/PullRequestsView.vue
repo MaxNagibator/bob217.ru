@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { computed, onMounted } from 'vue'
 import {
-  GitPullRequest,
-  GitPullRequestDraft,
   MessageSquare,
   Smile,
   Clock,
@@ -54,20 +52,22 @@ onMounted(load)
 <template>
   <div class="pulls">
     <div class="pulls-container">
-      <div class="pulls-header">
-        <GitPullRequest class="pulls-icon" :size="56" :stroke-width="1.5" />
-        <h2>Открытые Pull Request</h2>
-        <p class="pulls-subtitle">
-          Все открытые PR в репозиториях
+      <header class="pulls-header">
+        <p class="cmd">
+          <span class="cmd-prompt">$</span> gh pr list --author
           <a href="https://github.com/MaxNagibator" target="_blank" rel="noopener noreferrer">
             MaxNagibator
           </a>
+          --state open
         </p>
-        <button class="refresh-button" :disabled="loading" @click="load" aria-label="Обновить">
-          <RefreshCw :size="16" :class="{ spin: loading }" />
-          <span>Обновить</span>
-        </button>
-      </div>
+        <h1>Открытые Pull Request</h1>
+        <div class="head-actions">
+          <button class="refresh-button" :disabled="loading" @click="load" aria-label="Обновить">
+            <RefreshCw :size="16" :class="{ spin: loading }" />
+            <span>Обновить</span>
+          </button>
+        </div>
+      </header>
 
       <LoadingSkeleton v-if="loading && !pulls.length" :count="4" variant="card" />
 
@@ -76,78 +76,76 @@ onMounted(load)
         <span>{{ error }}</span>
       </div>
 
-      <p v-else-if="!pulls.length" class="pulls-empty">Открытых PR нет.</p>
+      <p v-else-if="!pulls.length" class="pulls-empty">Открытых PR нет – всё уже в master.</p>
 
       <template v-else>
-        <div class="stats-bar">
-          <div class="seg">
-            <span class="seg-num total">{{ stats.total }}</span>
-            <span class="seg-label">PR</span>
-          </div>
-          <div class="seg">
-            <span class="seg-num ready">{{ stats.ready }}</span>
-            <span class="seg-label">готовы</span>
-          </div>
-          <div class="seg">
-            <span class="seg-num draft">{{ stats.draft }}</span>
-            <span class="seg-label">черновики</span>
-          </div>
-          <div class="seg">
-            <span class="seg-num">{{ stats.repos }}</span>
-            <span class="seg-label">репо</span>
-          </div>
-        </div>
+        <p class="shortstat">
+          <span class="n accent">{{ stats.total }}</span>
+          PR {{ plural(stats.total, 'открыт', 'открыто', 'открыто') }} ·
+          <span class="n ready">{{ stats.ready }}</span>
+          {{ plural(stats.ready, 'готов', 'готовы', 'готовы') }} ·
+          <span class="n draft">{{ stats.draft }}</span>
+          {{ plural(stats.draft, 'черновик', 'черновика', 'черновиков') }} ·
+          <span class="n">{{ stats.repos }}</span>
+          {{ plural(stats.repos, 'репозиторий', 'репозитория', 'репозиториев') }}
+        </p>
 
-        <ul class="pulls-list">
+        <ul class="log">
           <li
-            v-for="pr in sortedPulls"
+            v-for="(pr, i) in sortedPulls"
             :key="pr.id"
-            class="pull"
+            class="entry"
             :class="pr.draft ? 'is-draft' : 'is-ready'"
+            :style="{ '--i': i }"
           >
-            <a :href="pr.url" class="pull-link" target="_blank" rel="noopener noreferrer">
-              <img :src="pr.avatar" :alt="pr.author" class="pull-avatar" loading="lazy" />
-              <div class="pull-body">
-                <span class="pull-title">
-                  <component
-                    :is="pr.draft ? GitPullRequestDraft : GitPullRequest"
-                    class="pull-state-icon"
-                    :size="16"
-                  />
-                  <span class="pull-title-text">{{ pr.title }}</span>
-                  <span v-if="pr.draft" class="pull-badge">Черновик</span>
+            <span class="rail" aria-hidden="true">
+              <span class="node"></span>
+            </span>
+            <a :href="pr.url" class="entry-link" target="_blank" rel="noopener noreferrer">
+              <span class="pull-title">
+                <span class="pull-title-text">{{ pr.title }}</span>
+                <span v-if="pr.draft" class="pull-badge">Черновик</span>
+              </span>
+              <span class="pull-meta">
+                <span class="pull-repo">{{ pr.repo }}</span> #{{ pr.number }} ·
+                <img :src="pr.avatar" :alt="''" class="pull-avatar" loading="lazy" />
+                {{ pr.author }} · {{ formatDate(pr.createdAt) }}
+              </span>
+              <span class="pull-stats">
+                <span class="stat"><Clock :size="13" /> {{ ageLabel(pr.createdAt) }}</span>
+                <span v-if="pr.commits !== null" class="stat">
+                  <GitCommit :size="13" /> {{ pr.commits }}
                 </span>
-                <span class="pull-meta">
-                  {{ pr.repo }} #{{ pr.number }} · {{ pr.author }} · {{ formatDate(pr.createdAt) }}
+                <span v-if="pr.changedFiles !== null" class="stat">
+                  <FileDiff :size="13" /> {{ pr.changedFiles }}
                 </span>
-                <span class="pull-stats">
-                  <span class="stat"><Clock :size="13" /> {{ ageLabel(pr.createdAt) }}</span>
-                  <span v-if="pr.commits !== null" class="stat">
-                    <GitCommit :size="13" /> {{ pr.commits }}
+                <span v-if="pr.additions !== null" class="stat diffstat">
+                  <span class="add">+{{ pr.additions }}</span>
+                  <span class="del">−{{ pr.deletions ?? 0 }}</span>
+                  <span class="diffbar" aria-hidden="true">
+                    <span
+                      v-for="(cell, j) in diffCells(pr.additions, pr.deletions ?? 0)"
+                      :key="j"
+                      class="diffcell"
+                      :class="cell"
+                    ></span>
                   </span>
-                  <span v-if="pr.changedFiles !== null" class="stat">
-                    <FileDiff :size="13" /> {{ pr.changedFiles }}
-                  </span>
-                  <span v-if="pr.additions !== null" class="stat diffstat">
-                    <span class="add">+{{ pr.additions }}</span>
-                    <span class="del">−{{ pr.deletions ?? 0 }}</span>
-                    <span class="diffbar" aria-hidden="true">
-                      <span
-                        v-for="(cell, i) in diffCells(pr.additions, pr.deletions ?? 0)"
-                        :key="i"
-                        class="diffcell"
-                        :class="cell"
-                      ></span>
-                    </span>
-                  </span>
-                  <span v-if="pr.comments" class="stat">
-                    <MessageSquare :size="13" /> {{ pr.comments }}
-                  </span>
-                  <span v-if="pr.reactions" class="stat"><Smile :size="13" /> {{ pr.reactions }}</span>
                 </span>
-              </div>
-              <ExternalLink class="pull-external" :size="18" />
+                <span v-if="pr.comments" class="stat">
+                  <MessageSquare :size="13" /> {{ pr.comments }}
+                </span>
+                <span v-if="pr.reactions" class="stat">
+                  <Smile :size="13" /> {{ pr.reactions }}
+                </span>
+              </span>
+              <ExternalLink class="pull-external" :size="16" />
             </a>
+          </li>
+          <li class="trunk" aria-hidden="true" :style="{ '--i': sortedPulls.length }">
+            <span class="rail">
+              <span class="node trunk-node"></span>
+            </span>
+            <span class="trunk-label">master</span>
           </li>
         </ul>
       </template>
@@ -163,7 +161,6 @@ onMounted(load)
 .pulls {
   min-height: 100vh;
   padding: var(--spacing-xl);
-  padding-top: calc(var(--nav-height) + var(--spacing-xl));
 }
 
 .pulls-container {
@@ -173,36 +170,37 @@ onMounted(load)
 }
 
 .pulls-header {
-  text-align: center;
   margin-bottom: var(--spacing-xl);
 }
 
-.pulls-icon {
-  display: block;
-  margin: 0 auto var(--spacing-md);
-  color: var(--color-accent);
-}
-
-.pulls-header h2 {
-  font-family: var(--font-family-heading);
-  font-size: var(--font-size-2xl);
-  color: var(--color-text-primary);
+.cmd {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.03em;
   margin: 0 0 var(--spacing-sm) 0;
 }
 
-.pulls-subtitle {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  margin: 0 0 var(--spacing-md) 0;
+.cmd-prompt {
+  color: var(--color-accent);
 }
 
-.pulls-subtitle a {
+.cmd a {
   color: var(--color-link);
   text-decoration: none;
 }
 
-.pulls-subtitle a:hover {
+.cmd a:hover {
   text-decoration: underline;
+}
+
+.pulls-header h1 {
+  margin: 0;
+}
+
+.head-actions {
+  display: flex;
+  justify-content: center;
 }
 
 .refresh-button {
@@ -210,10 +208,11 @@ onMounted(load)
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-md);
+  font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  background: var(--color-bg-tertiary);
-  border: 1px solid var(--color-bg-elevated);
+  background: transparent;
+  border: 1px solid var(--color-bg-tertiary);
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -253,98 +252,119 @@ onMounted(load)
 .pulls-empty,
 .pulls-more {
   text-align: center;
+  font-family: var(--font-family-mono);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
-.stats-bar {
-  display: flex;
-  margin-bottom: var(--spacing-lg);
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.seg {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-md) var(--spacing-sm);
-  border-left: 1px solid var(--color-bg-tertiary);
-}
-
-.seg:first-child {
-  border-left: none;
-}
-
-.seg-num {
+.shortstat {
   font-family: var(--font-family-mono);
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-lg) 0;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-bg-tertiary);
+}
+
+.n {
   font-weight: 700;
-  line-height: 1;
   color: var(--color-text-primary);
 }
 
-.seg-num.total {
+.n.accent {
   color: var(--color-accent);
 }
 
-.seg-num.ready {
+.n.ready {
   color: var(--color-success);
 }
 
-.seg-num.draft {
-  color: var(--color-text-muted);
+.n.draft {
+  color: var(--color-text-secondary);
 }
 
-.seg-label {
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-xs);
-  letter-spacing: 0.05em;
-  color: var(--color-text-muted);
-}
-
-.pulls-list {
+.log {
+  --node-y: 26px;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.pull-link {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
-  text-decoration: none;
-  background: var(--color-bg-secondary);
-  border: 1px solid transparent;
-  border-radius: var(--radius-lg);
+.entry,
+.trunk {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  animation: entry-in 0.35s ease backwards;
+  animation-delay: min(calc(var(--i) * 45ms), 600ms);
+}
+
+@keyframes entry-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
+.rail {
+  position: relative;
+}
+
+.rail::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--color-bg-tertiary);
+}
+
+.log li:first-child .rail::before {
+  top: var(--node-y);
+}
+
+.node {
+  position: absolute;
+  left: 50%;
+  top: var(--node-y);
+  transform: translate(-50%, -50%);
+  width: 11px;
+  height: 11px;
+  border-radius: var(--radius-full);
   transition: all var(--transition-fast);
 }
 
-.pull-link:hover {
+.is-ready .node {
+  background: var(--color-success);
+}
+
+.is-draft .node {
+  background: var(--color-bg-primary);
+  border: 2px solid var(--color-text-muted);
+}
+
+.entry:hover .node {
+  background: var(--color-accent);
   border-color: var(--color-accent);
-  transform: translateY(-2px);
 }
 
-.pull-avatar {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-}
-
-.pull-body {
-  flex: 1;
+.entry-link {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  min-width: 0;
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-sm);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.entry-link:hover {
+  background: var(--color-bg-secondary);
 }
 
 .pull-title {
@@ -352,21 +372,14 @@ onMounted(load)
   align-items: center;
   flex-wrap: wrap;
   gap: var(--spacing-sm);
+  padding-right: var(--spacing-xl);
   font-size: var(--font-size-base);
   font-weight: 500;
   color: var(--color-text-primary);
 }
 
-.pull-state-icon {
-  flex-shrink: 0;
-}
-
-.is-ready .pull-state-icon {
-  color: var(--color-success);
-}
-
-.is-draft .pull-state-icon {
-  color: var(--color-text-muted);
+.is-draft .pull-title-text {
+  color: var(--color-text-secondary);
 }
 
 .pull-badge {
@@ -378,23 +391,25 @@ onMounted(load)
   border-radius: var(--radius-full);
 }
 
-.is-draft .pull-link {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--color-bg-secondary),
-    var(--color-bg-secondary) 7px,
-    var(--color-bg-elevated) 7px,
-    var(--color-bg-elevated) 14px
-  );
-}
-
 .pull-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
   font-family: var(--font-family-mono);
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.pull-repo {
+  color: var(--color-link);
+  font-weight: 600;
+}
+
+.pull-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
 }
 
 .pull-stats {
@@ -449,18 +464,58 @@ onMounted(load)
 }
 
 .pull-external {
-  flex-shrink: 0;
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
   color: var(--color-text-muted);
+  transition: color var(--transition-fast);
 }
 
-.pull-link:hover .pull-external {
+.entry-link:hover .pull-external {
+  color: var(--color-accent);
+}
+
+.trunk {
+  --node-y: 18px;
+  min-height: 36px;
+}
+
+.trunk .rail::before {
+  bottom: calc(100% - var(--node-y));
+}
+
+.trunk-node {
+  background: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.trunk-label {
+  align-self: center;
+  padding-left: var(--spacing-sm);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
   color: var(--color-accent);
 }
 
 @media (max-width: 768px) {
   .pulls {
     padding: var(--spacing-lg);
-    padding-top: calc(var(--nav-height) + var(--spacing-lg));
+  }
+
+  .pull-stats {
+    gap: var(--spacing-sm);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry,
+  .trunk {
+    animation: none;
+  }
+
+  .spin {
+    animation: none;
   }
 }
 </style>

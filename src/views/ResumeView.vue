@@ -11,8 +11,6 @@ import {
   Crown,
   Camera,
   Building2,
-  ExternalLink,
-  Lightbulb,
   type LucideIcon,
 } from 'lucide-vue-next'
 
@@ -154,287 +152,281 @@ const projects: ResumeProject[] = [
 
 <template>
   <div class="resume">
-    <div class="resume-header">
-      <h1>Резюме</h1>
-      <p class="resume-subtitle">BobGroup. Работаем на себя. Что вспомнилось:</p>
-      <p class="resume-note">
-        <Lightbulb class="note-icon" :size="18" />
-        Если вы это смотрите, то сорян, на фронтенд деняк не хватило
-      </p>
-    </div>
+    <div class="resume-container">
+      <header class="resume-header">
+        <p class="cmd"><span class="cmd-prompt">$</span> git reflog --author bob217</p>
+        <h1>Резюме</h1>
+        <p class="resume-subtitle">BobGroup. Работаем на себя. Что вспомнилось:</p>
+        <p class="cmd-note"># сорян, на фронтенд деняк не хватило</p>
+      </header>
 
-    <div class="timeline">
-      <article v-for="project in projects" :key="project.id" class="timeline-item">
-        <div class="timeline-marker">
-          <div class="marker-icon">
-            <component :is="project.icon" :size="24" />
-          </div>
-          <span class="marker-number">#{{ project.id }}</span>
-        </div>
-
-        <div class="timeline-content">
-          <header class="project-header">
-            <h3 class="project-title">{{ project.title }}</h3>
-            <div class="project-tags">
-              <span v-for="tag in project.tags" :key="tag" class="tag">
-                {{ tag }}
-              </span>
+      <ul class="log">
+        <li
+          v-for="(project, i) in projects"
+          :key="project.id"
+          class="entry"
+          :class="{ 'is-head': i === 0 }"
+          :style="{ '--i': i }"
+        >
+          <span class="rail" aria-hidden="true">
+            <span class="node"></span>
+          </span>
+          <article class="entry-body">
+            <header class="entry-head">
+              <component :is="project.icon" class="entry-icon" :size="18" />
+              <h3 class="entry-title">{{ project.title }}</h3>
+              <span v-if="i === 0" class="head-ref">HEAD@{0}</span>
+            </header>
+            <p class="entry-refs">({{ project.tags.join(', ') }})</p>
+            <div class="entry-text">
+              <p v-for="(paragraph, j) in project.description" :key="j">
+                {{ paragraph }}
+              </p>
             </div>
-          </header>
-
-          <div class="project-description">
-            <p v-for="(paragraph, index) in project.description" :key="index">
-              {{ paragraph }}
-            </p>
-          </div>
-
-          <div v-if="project.links?.length" class="project-links">
-            <a
-              v-for="link in project.links"
-              :key="link.url"
-              :href="link.url"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="project-link"
-            >
-              <ExternalLink class="link-icon" :size="14" />
-              {{ link.label }}
-            </a>
-          </div>
-        </div>
-      </article>
+            <div v-if="project.links?.length" class="entry-links">
+              <a
+                v-for="link in project.links"
+                :key="link.url"
+                :href="link.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="entry-link"
+              >
+                {{ link.label }}
+              </a>
+            </div>
+          </article>
+        </li>
+        <li class="tail" aria-hidden="true" :style="{ '--i': projects.length }">
+          <span class="rail">
+            <span class="node tail-node"></span>
+          </span>
+          <span class="tail-label">дальше не вспомнилось…</span>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
 
 <style scoped>
 .resume {
-  max-width: var(--max-width-content);
-  margin: 0 auto;
+  min-height: 100vh;
   padding: var(--spacing-xl);
 }
 
+.resume-container {
+  width: 100%;
+  max-width: var(--max-width-content);
+  margin: 0 auto;
+}
+
 .resume-header {
-  text-align: center;
-  margin-bottom: var(--spacing-2xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.cmd {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.03em;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.cmd-prompt {
+  color: var(--color-accent);
 }
 
 .resume-header h1 {
-  margin-bottom: var(--spacing-sm);
-}
-
-.resume-subtitle {
-  font-size: var(--font-size-lg);
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--spacing-md) 0;
-}
-
-.resume-note {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
   margin: 0;
 }
 
-.note-icon {
+.resume-subtitle {
   font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin: 0 0 var(--spacing-sm) 0;
 }
 
-.timeline {
+.cmd-note {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0;
+}
+
+.log {
+  --node-y: 30px;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry,
+.tail {
   position: relative;
-  padding-left: var(--spacing-2xl);
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  animation: entry-in 0.35s ease backwards;
+  animation-delay: min(calc(var(--i) * 45ms), 600ms);
 }
 
-.timeline::before {
+@keyframes entry-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
+.rail {
+  position: relative;
+}
+
+.rail::before {
   content: '';
   position: absolute;
-  left: 24px;
+  left: 50%;
   top: 0;
   bottom: 0;
   width: 2px;
-  background: linear-gradient(
-    to bottom,
-    var(--color-accent),
-    var(--color-link),
-    var(--color-danger)
-  );
-}
-
-.timeline-item {
-  position: relative;
-  display: flex;
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-xl);
-  animation: fadeInUp 0.5s ease forwards;
-  opacity: 0;
-}
-
-.timeline-item:nth-child(1) {
-  animation-delay: 0.1s;
-}
-.timeline-item:nth-child(2) {
-  animation-delay: 0.15s;
-}
-.timeline-item:nth-child(3) {
-  animation-delay: 0.2s;
-}
-.timeline-item:nth-child(4) {
-  animation-delay: 0.25s;
-}
-.timeline-item:nth-child(5) {
-  animation-delay: 0.3s;
-}
-.timeline-item:nth-child(6) {
-  animation-delay: 0.35s;
-}
-.timeline-item:nth-child(7) {
-  animation-delay: 0.4s;
-}
-.timeline-item:nth-child(8) {
-  animation-delay: 0.45s;
-}
-.timeline-item:nth-child(9) {
-  animation-delay: 0.5s;
-}
-.timeline-item:nth-child(10) {
-  animation-delay: 0.55s;
-}
-.timeline-item:nth-child(11) {
-  animation-delay: 0.6s;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.timeline-marker {
-  position: absolute;
-  left: calc(-1 * var(--spacing-2xl) - 12px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.marker-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  font-size: var(--font-size-xl);
-  background: var(--color-bg-secondary);
-  border: 3px solid var(--color-bg-tertiary);
-  border-radius: var(--radius-full);
-  z-index: 1;
-  transition: all var(--transition-base);
-}
-
-.timeline-item:hover .marker-icon {
-  border-color: var(--color-accent);
-  transform: scale(1.1);
-}
-
-.marker-number {
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(--color-text-muted);
-}
-
-.timeline-content {
-  flex: 1;
-  padding: var(--spacing-lg);
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-lg);
-  border-left: 4px solid transparent;
-  transition: all var(--transition-base);
-}
-
-.timeline-item:hover .timeline-content {
-  border-left-color: var(--color-accent);
-  box-shadow: var(--shadow-lg);
-}
-
-.project-header {
-  margin-bottom: var(--spacing-md);
-}
-
-.project-title {
-  font-family: var(--font-family-heading);
-  font-size: var(--font-size-lg);
-  color: var(--color-accent);
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.project-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-xs);
-}
-
-.tag {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  color: var(--color-link);
-  background: rgba(0, 188, 212, 0.1);
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(0, 188, 212, 0.3);
-}
-
-.project-description {
-  margin-bottom: var(--spacing-md);
-}
-
-.project-description p {
-  line-height: var(--line-height-relaxed);
-  color: var(--color-text-secondary);
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.project-description p:last-child {
-  margin-bottom: 0;
-}
-
-.project-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-bg-tertiary);
-}
-
-.project-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+  margin-left: -1px;
   background: var(--color-bg-tertiary);
-  border-radius: var(--radius-sm);
+}
+
+.log li:first-child .rail::before {
+  top: var(--node-y);
+}
+
+.node {
+  position: absolute;
+  left: 50%;
+  top: var(--node-y);
+  transform: translate(-50%, -50%);
+  width: 11px;
+  height: 11px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-muted);
   transition: all var(--transition-fast);
 }
 
-.project-link:hover {
-  color: var(--color-accent);
-  background: var(--color-bg-elevated);
+.is-head .node {
+  background: var(--color-accent);
+  box-shadow: var(--shadow-glow);
 }
 
-.link-icon {
+.entry:hover .node {
+  background: var(--color-accent);
+}
+
+.entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-lg) var(--spacing-sm);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.entry:hover .entry-body {
+  background: var(--color-bg-secondary);
+}
+
+.entry-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.entry-icon {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.entry:hover .entry-icon {
+  color: var(--color-accent);
+}
+
+.entry-title {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.head-ref {
+  padding: 0 var(--spacing-sm);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-full);
+}
+
+.entry-refs {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-success);
+  margin: 0;
+}
+
+.entry-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.entry-text p {
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.entry-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.entry-link {
+  font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+.entry-link::before {
+  content: '→ ';
+}
+
+.entry-link:hover {
+  color: var(--color-link-hover);
+  text-decoration: underline;
+}
+
+.tail {
+  --node-y: 18px;
+  min-height: 36px;
+}
+
+.tail .rail::before {
+  bottom: calc(100% - var(--node-y));
+}
+
+.tail-node {
+  background: var(--color-bg-primary);
+  border: 2px solid var(--color-text-muted);
+}
+
+.tail-label {
+  align-self: center;
+  padding-left: var(--spacing-sm);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
 }
 
 @media (max-width: 768px) {
@@ -442,30 +434,15 @@ const projects: ResumeProject[] = [
     padding: var(--spacing-lg);
   }
 
-  .timeline {
-    padding-left: var(--spacing-xl);
-  }
-
-  .timeline::before {
-    left: 16px;
-  }
-
-  .timeline-marker {
-    left: calc(-1 * var(--spacing-xl) - 8px);
-  }
-
-  .marker-icon {
-    width: 36px;
-    height: 36px;
+  .entry-title {
     font-size: var(--font-size-base);
   }
+}
 
-  .timeline-content {
-    padding: var(--spacing-md);
-  }
-
-  .project-title {
-    font-size: var(--font-size-base);
+@media (prefers-reduced-motion: reduce) {
+  .entry,
+  .tail {
+    animation: none;
   }
 }
 </style>

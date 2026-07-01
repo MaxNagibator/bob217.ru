@@ -24,11 +24,11 @@ const isScrolled = ref(false)
 
 const navLinks: NavLink[] = [
   { to: '/', label: 'Главная', icon: Home },
+  { to: '/donate', label: 'Донат', icon: Heart },
   { to: '/resume', label: 'Резюме', icon: FileText },
   { to: '/about', label: 'О нас', icon: Info },
-  { to: '/donate', label: 'Донат', icon: Heart },
-  { to: '/tarkov', label: 'Тарков', icon: Clock },
   { to: '/pulls', label: 'PR', icon: GitPullRequest },
+  { to: '/tarkov', label: 'Тарков', icon: Clock },
 ]
 
 const toggleMenu = (): void => {
