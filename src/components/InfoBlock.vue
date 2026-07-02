@@ -4,103 +4,89 @@ import WeeklySchedule from './WeeklySchedule.vue'
 
 <template>
   <div class="info-content">
-    <h2>
-      Чем мы тут занимаемся, примерно в 18:00МСК начинаем.
-      <br />
-      <a class="telegram-link" href="https://t.me/@druzhok_kruzhok_bot">
-        Уведомления тут в телеге
-      </a>
-    </h2>
-    <ul>
-      <li class="main-task">
-        <b>Основная задача</b>: Дать возможность ютуб бакуперу заливать видосы на рутуб.
-		Делаем оркестратор медия.
-		В нём будут настраиваться правила из какого хранилища в какое перекачивать данные (например с ютуба на жёсткий, с жёсткого на рутуб и вк видео).
-		Хранилища реализуем в ввиде плагинов для удобства расширения (шутка, просто по приколу и для развития).
-	    Первичный вид на винформах, потом мб сделаем консоль (шутка).
-      </li>
-    </ul>
+    <section class="md-section">
+      <h2 class="md-head"><span class="hash">##</span> Основная задача</h2>
+      <p class="task">
+        Дать возможность ютуб бакуперу заливать видосы на рутуб. Делаем оркестратор медия. В нём
+        будут настраиваться правила из какого хранилища в какое перекачивать данные (например с
+        ютуба на жёсткий, с жёсткого на рутуб и вк видео). Хранилища реализуем в ввиде плагинов для
+        удобства расширения (шутка, просто по приколу и для развития). Первичный вид на винформах,
+        потом мб сделаем консоль (шутка).
+      </p>
+    </section>
 
-    <WeeklySchedule />
+    <section class="md-section">
+      <h2 class="md-head"><span class="hash">##</span> Расписание недели</h2>
+      <WeeklySchedule />
+    </section>
 
-    <ul>
-      <li>
-        Планы:<br />
-        Продолжить сапёра на vieJs / Авторизация будет через
-        https://auth.bob217.ru (который нужно тоже сделать)
-      </li>
-      <li>Поддержка ранее написанных решений. Список ниже.</li>
-    </ul>
+    <section class="md-section">
+      <h2 class="md-head"><span class="hash">##</span> Планы</h2>
+      <ul class="md-list">
+        <li>
+          Продолжить сапёра на vieJs / Авторизация будет через https://auth.bob217.ru (который нужно
+          тоже сделать)
+        </li>
+        <li>Поддержка ранее написанных решений. Список ниже.</li>
+      </ul>
+    </section>
   </div>
 </template>
 
 <style scoped>
 .info-content {
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
 }
 
-.info-content h2 {
-  font-family: var(--font-family-heading);
-  font-size: var(--font-size-lg);
-  font-weight: 600;
+.md-section + .md-section {
+  margin-top: var(--spacing-xl);
+}
+
+.md-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
   margin: 0 0 var(--spacing-md) 0;
-  color: var(--color-text-primary);
 }
 
-.info-content ul {
+.md-head .hash {
+  font-family: var(--font-family-mono);
+  font-size: 0.8em;
+  color: var(--color-accent);
+}
+
+.task {
+  margin: 0;
+  padding: var(--spacing-xs) 0 var(--spacing-xs) var(--spacing-md);
+  border-left: 3px solid var(--color-accent);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
+}
+
+.md-list {
   margin: 0;
   padding: 0;
-  list-style-type: none;
+  list-style: none;
 }
 
-.info-content ul li {
+.md-list li {
+  position: relative;
+  padding-left: 1.2em;
   font-size: var(--font-size-base);
-  line-height: var(--line-height-base);
-  margin-bottom: var(--spacing-md);
-  padding: var(--spacing-md);
-  transition: background-color var(--transition-base);
+  line-height: var(--line-height-relaxed);
   color: var(--color-text-secondary);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-bg-secondary);
 }
 
-.info-content ul li:hover {
-  background-color: var(--color-bg-tertiary);
+.md-list li + li {
+  margin-top: var(--spacing-sm);
 }
 
-.info-content ul li b {
-  color: var(--color-accent);
-}
-
-.info-content ul li a {
-  transition: color var(--transition-base);
-  text-decoration: none;
-  color: var(--color-link);
-}
-
-.info-content ul li a:hover {
-  color: var(--color-accent);
-}
-
-.main-task {
-  border-left: 4px solid var(--color-accent);
-}
-
-.telegram-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: linear-gradient(135deg, #0088cc 0%, #00a8e8 100%);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-primary);
-  font-weight: 500;
-  transition: all var(--transition-base);
-}
-
-.telegram-link:hover {
-  color: var(--color-text-primary);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 136, 204, 0.4);
+.md-list li::before {
+  content: '-';
+  position: absolute;
+  left: 0;
+  font-family: var(--font-family-mono);
+  color: var(--color-text-muted);
 }
 </style>

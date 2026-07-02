@@ -1,4 +1,4 @@
-﻿import { onMounted, readonly, ref } from 'vue'
+import { onMounted, readonly, ref } from 'vue'
 import type { CardsData } from '@/types/card'
 import cardsJson from '@/assets/data/cards.json'
 
