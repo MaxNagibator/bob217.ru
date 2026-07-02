@@ -13,6 +13,9 @@ import {
   Building2,
   type LucideIcon,
 } from 'lucide-vue-next'
+import { ref } from 'vue'
+import CmdLine from '@/components/CmdLine.vue'
+import { useCmdReplay } from '@/composables/useCmdReplay'
 
 interface ResumeProject {
   id: number
@@ -148,19 +151,31 @@ const projects: ResumeProject[] = [
     ],
   },
 ]
+
+const logKey = ref(0)
+const { phaseClass, start, print } = useCmdReplay(() => 1100)
+
+const replay = (): void => {
+  print()
+  logKey.value += 1
+}
 </script>
 
 <template>
-  <div class="resume">
+  <div class="resume" :class="phaseClass">
     <div class="resume-container">
       <header class="resume-header">
-        <p class="cmd"><span class="cmd-prompt">$</span> git reflog --author bob217</p>
-        <h1>Резюме</h1>
-        <p class="resume-subtitle">BobGroup. Работаем на себя. Что вспомнилось:</p>
-        <p class="cmd-note"># сорян, на фронтенд деняк не хватило</p>
+        <CmdLine @run="start" @done="replay">git reflog --author bob217</CmdLine>
+        <h1 class="cmd-out">Резюме</h1>
+        <p class="resume-subtitle cmd-out" style="--print-delay: 80ms">
+          BobGroup. Работаем на себя. Что вспомнилось:
+        </p>
+        <p class="cmd-note cmd-out" style="--print-delay: 160ms">
+          # сорян, на фронтенд деняк не хватило
+        </p>
       </header>
 
-      <ul class="log">
+      <ul :key="logKey" class="log cmd-out" style="--print-delay: 200ms">
         <li
           v-for="(project, i) in projects"
           :key="project.id"
@@ -224,18 +239,6 @@ const projects: ResumeProject[] = [
   margin-bottom: var(--spacing-xl);
 }
 
-.cmd {
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  letter-spacing: 0.03em;
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.cmd-prompt {
-  color: var(--color-accent);
-}
-
 .resume-header h1 {
   margin: 0;
 }
@@ -266,17 +269,22 @@ const projects: ResumeProject[] = [
 
 .entry,
 .tail {
+  --stagger: min(calc(var(--i) * 45ms), 600ms);
   position: relative;
   display: grid;
   grid-template-columns: 28px 1fr;
-  animation: entry-in 0.35s ease backwards;
-  animation-delay: min(calc(var(--i) * 45ms), 600ms);
+  animation: entry-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: var(--stagger);
 }
 
 @keyframes entry-in {
   from {
     opacity: 0;
-    transform: translateX(-8px);
+    transform: translateX(-28px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(4px);
   }
 }
 
@@ -293,6 +301,15 @@ const projects: ResumeProject[] = [
   width: 2px;
   margin-left: -1px;
   background: var(--color-bg-tertiary);
+  transform-origin: top;
+  animation: rail-draw 0.45s ease backwards;
+  animation-delay: var(--stagger);
+}
+
+@keyframes rail-draw {
+  from {
+    transform: scaleY(0);
+  }
 }
 
 .log li:first-child .rail::before {
@@ -309,6 +326,14 @@ const projects: ResumeProject[] = [
   border-radius: var(--radius-full);
   background: var(--color-text-muted);
   transition: all var(--transition-fast);
+  animation: node-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: calc(var(--stagger) + 140ms);
+}
+
+@keyframes node-pop {
+  from {
+    transform: translate(-50%, -50%) scale(0);
+  }
 }
 
 .is-head .node {
@@ -441,7 +466,9 @@ const projects: ResumeProject[] = [
 
 @media (prefers-reduced-motion: reduce) {
   .entry,
-  .tail {
+  .tail,
+  .rail::before,
+  .node {
     animation: none;
   }
 }

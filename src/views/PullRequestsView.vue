@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import {
   MessageSquare,
   Smile,
@@ -10,7 +10,9 @@ import {
   RefreshCw,
   AlertCircle,
 } from 'lucide-vue-next'
+import CmdLine from '@/components/CmdLine.vue'
 import LoadingSkeleton from '@/components/LoadingSkeleton.vue'
+import { useCmdReplay } from '@/composables/useCmdReplay'
 import { usePullRequests } from '@/composables/usePullRequests'
 
 const { pulls, total, stats, loading, error, load } = usePullRequests()
@@ -46,22 +48,30 @@ const diffCells = (add: number, del: number): DiffCell[] => {
   return Array.from({ length: 5 }, (_, i): DiffCell => (i < green ? 'add' : 'del'))
 }
 
+const logKey = ref(0)
+const { phaseClass, start, print } = useCmdReplay(() => 1100)
+
+const replay = (): void => {
+  print()
+  logKey.value += 1
+}
+
 onMounted(load)
 </script>
 
 <template>
-  <div class="pulls">
+  <div class="pulls" :class="phaseClass">
     <div class="pulls-container">
       <header class="pulls-header">
-        <p class="cmd">
-          <span class="cmd-prompt">$</span> gh pr list --author
-          <a href="https://github.com/MaxNagibator" target="_blank" rel="noopener noreferrer">
-            MaxNagibator
-          </a>
-          --state open
-        </p>
-        <h1>Открытые Pull Request</h1>
-        <div class="head-actions">
+        <CmdLine @run="start" @done="replay"
+          >gh pr list --author
+          <a href="https://github.com/MaxNagibator" target="_blank" rel="noopener noreferrer"
+            >MaxNagibator</a
+          >
+          --state open</CmdLine
+        >
+        <h1 class="cmd-out">Открытые Pull Request</h1>
+        <div class="head-actions cmd-out" style="--print-delay: 80ms">
           <button class="refresh-button" :disabled="loading" @click="load" aria-label="Обновить">
             <RefreshCw :size="16" :class="{ spin: loading }" />
             <span>Обновить</span>
@@ -79,7 +89,7 @@ onMounted(load)
       <p v-else-if="!pulls.length" class="pulls-empty">Открытых PR нет – всё уже в master.</p>
 
       <template v-else>
-        <p class="shortstat">
+        <p class="shortstat cmd-out" style="--print-delay: 160ms">
           <span class="n accent">{{ stats.total }}</span>
           PR {{ plural(stats.total, 'открыт', 'открыто', 'открыто') }} ·
           <span class="n ready">{{ stats.ready }}</span>
@@ -90,7 +100,7 @@ onMounted(load)
           {{ plural(stats.repos, 'репозиторий', 'репозитория', 'репозиториев') }}
         </p>
 
-        <ul class="log">
+        <ul :key="logKey" class="log cmd-out" style="--print-delay: 200ms">
           <li
             v-for="(pr, i) in sortedPulls"
             :key="pr.id"
@@ -128,6 +138,7 @@ onMounted(load)
                       :key="j"
                       class="diffcell"
                       :class="cell"
+                      :style="{ '--j': j }"
                     ></span>
                   </span>
                 </span>
@@ -150,7 +161,11 @@ onMounted(load)
         </ul>
       </template>
 
-      <p v-if="!loading && total > pulls.length" class="pulls-more">
+      <p
+        v-if="!loading && total > pulls.length"
+        class="pulls-more cmd-out"
+        style="--print-delay: 200ms"
+      >
         Показаны {{ pulls.length }} из {{ total }}.
       </p>
     </div>
@@ -171,18 +186,6 @@ onMounted(load)
 
 .pulls-header {
   margin-bottom: var(--spacing-xl);
-}
-
-.cmd {
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  letter-spacing: 0.03em;
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.cmd-prompt {
-  color: var(--color-accent);
 }
 
 .cmd a {
@@ -294,17 +297,23 @@ onMounted(load)
 
 .entry,
 .trunk {
+  --stagger: min(calc(var(--i) * 45ms), 600ms);
   position: relative;
   display: grid;
   grid-template-columns: 28px 1fr;
-  animation: entry-in 0.35s ease backwards;
-  animation-delay: min(calc(var(--i) * 45ms), 600ms);
+  transform-origin: top center;
+  animation: entry-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: var(--stagger);
 }
 
 @keyframes entry-in {
   from {
     opacity: 0;
-    transform: translateX(-8px);
+    transform: perspective(700px) rotateX(-24deg) translateY(18px);
+  }
+  60% {
+    opacity: 1;
+    transform: perspective(700px) rotateX(4deg) translateY(-2px);
   }
 }
 
@@ -321,6 +330,15 @@ onMounted(load)
   width: 2px;
   margin-left: -1px;
   background: var(--color-bg-tertiary);
+  transform-origin: top;
+  animation: rail-draw 0.5s ease backwards;
+  animation-delay: var(--stagger);
+}
+
+@keyframes rail-draw {
+  from {
+    transform: scaleY(0);
+  }
 }
 
 .log li:first-child .rail::before {
@@ -336,6 +354,14 @@ onMounted(load)
   height: 11px;
   border-radius: var(--radius-full);
   transition: all var(--transition-fast);
+  animation: node-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: calc(var(--stagger) + 160ms);
+}
+
+@keyframes node-pop {
+  from {
+    transform: translate(-50%, -50%) scale(0);
+  }
 }
 
 .is-ready .node {
@@ -453,6 +479,14 @@ onMounted(load)
   height: 7px;
   border-radius: 1px;
   background: var(--color-bg-tertiary);
+  animation: cell-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: calc(var(--stagger) + 260ms + var(--j, 0) * 45ms);
+}
+
+@keyframes cell-pop {
+  from {
+    transform: scale(0);
+  }
 }
 
 .diffcell.add {
@@ -510,7 +544,10 @@ onMounted(load)
 
 @media (prefers-reduced-motion: reduce) {
   .entry,
-  .trunk {
+  .trunk,
+  .rail::before,
+  .node,
+  .diffcell {
     animation: none;
   }
 

@@ -1,8 +1,11 @@
 <script lang="ts" setup>
 import { Copy, Check, Heart } from 'lucide-vue-next'
+import CmdLine from '@/components/CmdLine.vue'
 import { useClipboard } from '@/composables/useClipboard'
+import { useCmdReplay } from '@/composables/useCmdReplay'
 
 const { copied, copy } = useClipboard()
+const { phaseClass, start, print } = useCmdReplay(() => 460)
 
 const CRYPTO_ADDRESS = '0x09daec7735270c3dc16c3fcfae159f38352b606d'
 
@@ -12,21 +15,20 @@ const copyAddress = (): void => {
 </script>
 
 <template>
-  <div class="donate">
+  <div class="donate" :class="phaseClass">
     <div class="donate-container">
       <header class="donate-header">
-        <p class="cmd">
-          <span class="cmd-prompt">$</span> git remote -v
-          <span class="cmd-note"># куда пушить поддержку &lt;3</span>
-        </p>
-        <Heart class="donate-heart" :size="44" :stroke-width="1.5" aria-hidden="true" />
-        <h1>Поддержка проектов</h1>
-        <p class="donate-subtitle">
+        <CmdLine @run="start" @done="print"
+          >git remote -v <span class="cmd-note"># куда пушить поддержку &lt;3</span></CmdLine
+        >
+        <Heart class="donate-heart cmd-out" :size="44" :stroke-width="1.5" aria-hidden="true" />
+        <h1 class="cmd-out" style="--print-delay: 80ms">Поддержка проектов</h1>
+        <p class="donate-subtitle cmd-out" style="--print-delay: 160ms">
           "дот нет помойка", "лучик света", "игровая дрисня", "фильмы с максимчиком"
         </p>
       </header>
 
-      <section class="remote">
+      <section class="remote cmd-out" style="--print-delay: 240ms">
         <header class="remote-head">
           <span class="remote-name">telegram</span>
           <a
@@ -41,7 +43,7 @@ const copyAddress = (): void => {
         </header>
       </section>
 
-      <section class="remote">
+      <section class="remote cmd-out" style="--print-delay: 350ms">
         <header class="remote-head">
           <span class="remote-name">donate.stream</span>
           <a
@@ -58,7 +60,7 @@ const copyAddress = (): void => {
         <img alt="QR код для доната" class="qr-image" src="/img/qr.png" />
       </section>
 
-      <section class="remote">
+      <section class="remote cmd-out" style="--print-delay: 460ms">
         <header class="remote-head">
           <span class="remote-name">usdt-bep20</span>
           <span class="remote-kind">(push)</span>
@@ -123,16 +125,42 @@ const copyAddress = (): void => {
   }
 }
 
-.cmd {
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  letter-spacing: 0.03em;
-  margin: 0 0 var(--spacing-sm) 0;
+.donate.cmd-printing .cmd-out {
+  animation-name: donate-print;
+  animation-duration: 0.55s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.cmd-prompt {
-  color: var(--color-accent);
+@keyframes donate-print {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+.donate.cmd-printing .donate-heart {
+  animation: heart-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes heart-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .cmd-note {

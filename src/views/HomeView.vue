@@ -1,5 +1,8 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { useCards } from '@/composables/useCards'
+import { useCmdReplay } from '@/composables/useCmdReplay'
+import CmdLine from '@/components/CmdLine.vue'
 import InfoBlock from '@/components/InfoBlock.vue'
 import CardSection from '@/components/CardSection.vue'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
@@ -8,6 +11,9 @@ import LoadingSkeleton from '@/components/LoadingSkeleton.vue'
 
 const { cardsData, loading, error } = useCards()
 
+const sectionCount = computed(() => Object.keys(cardsData.value ?? {}).length)
+const { phaseClass, start, print } = useCmdReplay(() => 240 + sectionCount.value * 100)
+
 const retry = (): void => {
   window.location.reload()
 }
@@ -15,11 +21,11 @@ const retry = (): void => {
 
 <template>
   <ErrorBoundary>
-    <div class="home">
+    <div class="home" :class="phaseClass">
       <header class="home-header">
-        <p class="cmd"><span class="cmd-prompt">$</span> cat README.md</p>
-        <h1>Привет, сладенький ^_^</h1>
-        <p class="home-subtitle">
+        <CmdLine @run="start" @done="print">cat README.md</CmdLine>
+        <h1 class="cmd-out">Привет, сладенький ^_^</h1>
+        <p class="home-subtitle cmd-out" style="--print-delay: 80ms">
           Чем мы тут занимаемся, примерно в 18:00 МСК начинаем.
           <a href="https://t.me/@druzhok_kruzhok_bot" target="_blank" rel="noopener noreferrer">
             Уведомления тут в телеге
@@ -27,7 +33,7 @@ const retry = (): void => {
         </p>
       </header>
 
-      <InfoBlock />
+      <InfoBlock class="cmd-out" style="--print-delay: 160ms" />
 
       <div v-if="loading" class="loading-container">
         <LoadingSkeleton :count="4" variant="card" />
@@ -42,8 +48,10 @@ const retry = (): void => {
 
       <div v-else-if="cardsData">
         <CardSection
-          v-for="(cards, section) in cardsData"
+          v-for="(cards, section, i) in cardsData"
           :key="section"
+          class="cmd-out"
+          :style="{ '--print-delay': `${240 + i * 100}ms` }"
           :cards="cards"
           :title="String(section)"
         />
@@ -71,14 +79,6 @@ const retry = (): void => {
   margin: 0;
 }
 
-.cmd {
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  letter-spacing: 0.03em;
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
 .cmd-prompt {
   color: var(--color-accent);
 }
@@ -88,6 +88,25 @@ const retry = (): void => {
   font-size: var(--font-size-sm);
   text-align: center;
   margin: 0;
+}
+
+.home.cmd-printing .cmd-out {
+  animation-name: home-print;
+  animation-duration: 0.4s;
+  animation-timing-function: steps(18, end);
+}
+
+@keyframes home-print {
+  from {
+    opacity: 1;
+    clip-path: inset(0 100% 0 0);
+    filter: brightness(1.8);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    filter: brightness(1);
+  }
 }
 
 .loading-container {

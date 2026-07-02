@@ -1,22 +1,26 @@
 <script lang="ts" setup>
 import { useRoute, useRouter } from 'vue-router'
+import CmdLine from '@/components/CmdLine.vue'
+import { useCmdReplay } from '@/composables/useCmdReplay'
 
 const route = useRoute()
 const router = useRouter()
 
 const goBack = () => router.back()
 const goHome = () => router.push('/')
+
+const { phaseClass, start, print } = useCmdReplay(() => 280)
 </script>
 
 <template>
   <div class="err">
-    <main class="term term--accent">
+    <main class="term term--accent" :class="phaseClass">
       <p class="eyebrow"><span class="h">##</span> error</p>
-      <p class="cmd"><span class="p">$</span> git checkout {{ route.fullPath }}</p>
-      <div class="code">404</div>
-      <p class="fatal"><span class="kw">fatal:</span> страница не найдена</p>
-      <p class="hint">такого пути в этом репозитории нет.</p>
-      <div class="actions">
+      <CmdLine @run="start" @done="print">git checkout {{ route.fullPath }}</CmdLine>
+      <div class="code cmd-out">404</div>
+      <p class="fatal cmd-out"><span class="kw">fatal:</span> страница не найдена</p>
+      <p class="hint cmd-out">такого пути в этом репозитории нет.</p>
+      <div class="actions cmd-out">
         <button class="cmd-btn" @click="goBack"><span class="p">$</span> cd -</button>
         <button class="cmd-btn" @click="goHome"><span class="p">$</span> cd ~/</button>
       </div>
@@ -70,15 +74,125 @@ const goHome = () => router.push('/')
   color: var(--color-accent);
 }
 
-.cmd {
+.term .cmd {
   margin: 0;
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
   word-break: break-all;
 }
 
-.cmd .p {
-  color: var(--color-accent);
+.fatal.cmd-out {
+  --print-delay: 90ms;
+}
+
+.hint.cmd-out {
+  --print-delay: 180ms;
+}
+
+.actions.cmd-out {
+  --print-delay: 280ms;
+}
+
+.term.cmd-printing {
+  animation: term-shake 0.4s steps(1, end);
+}
+
+@keyframes term-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translate(3px, -2px);
+  }
+  40% {
+    transform: translate(-4px, 2px);
+  }
+  60% {
+    transform: translate(3px, 1px);
+  }
+  80% {
+    transform: translate(-2px, -1px);
+  }
+}
+
+.term.cmd-printing .code {
+  animation: code-glitch 0.6s steps(1, end) both;
+}
+
+@keyframes code-glitch {
+  0% {
+    opacity: 0;
+    transform: translateX(-8px);
+    text-shadow:
+      6px 0 rgba(102, 224, 255, 0.8),
+      -6px 0 rgba(255, 102, 153, 0.8);
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(6px) skewX(-4deg);
+    text-shadow:
+      -7px 0 rgba(102, 224, 255, 0.8),
+      7px 0 rgba(255, 102, 153, 0.8);
+  }
+  30% {
+    opacity: 1;
+    transform: translateX(-4px);
+    text-shadow:
+      5px 0 rgba(102, 224, 255, 0.8),
+      -5px 0 rgba(255, 102, 153, 0.8);
+  }
+  45% {
+    opacity: 1;
+    transform: translateX(3px) skewX(3deg);
+    text-shadow:
+      -3px 0 rgba(102, 224, 255, 0.8),
+      3px 0 rgba(255, 102, 153, 0.8);
+  }
+  60% {
+    opacity: 1;
+    transform: none;
+    text-shadow:
+      2px 0 rgba(102, 224, 255, 0.8),
+      -2px 0 rgba(255, 102, 153, 0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    text-shadow: 0 0 24px var(--code-glow);
+  }
+}
+
+.term.cmd-printing .fatal {
+  animation-name: fatal-flicker;
+  animation-duration: 0.5s;
+  animation-timing-function: steps(1, end);
+}
+
+@keyframes fatal-flicker {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  20% {
+    opacity: 0.15;
+  }
+  35% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.3;
+  }
+  60% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .code {
