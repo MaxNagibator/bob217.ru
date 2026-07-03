@@ -1,5 +1,8 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { useCards } from '@/composables/useCards'
+import { useCmdReplay } from '@/composables/useCmdReplay'
+import CmdLine from '@/components/CmdLine.vue'
 import InfoBlock from '@/components/InfoBlock.vue'
 import CardSection from '@/components/CardSection.vue'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
@@ -8,6 +11,9 @@ import LoadingSkeleton from '@/components/LoadingSkeleton.vue'
 
 const { cardsData, loading, error } = useCards()
 
+const sectionCount = computed(() => Object.keys(cardsData.value ?? {}).length)
+const { phaseClass, start, print } = useCmdReplay(() => 240 + sectionCount.value * 100)
+
 const retry = (): void => {
   window.location.reload()
 }
@@ -15,25 +21,37 @@ const retry = (): void => {
 
 <template>
   <ErrorBoundary>
-    <div class="home">
-      <h1>Привет, сладенький ^_^</h1>
+    <div class="home" :class="phaseClass">
+      <header class="home-header">
+        <CmdLine @run="start" @done="print">cat README.md</CmdLine>
+        <h1 class="cmd-out">Привет, сладенький ^_^</h1>
+        <p class="home-subtitle cmd-out" style="--print-delay: 80ms">
+          Чем мы тут занимаемся, примерно в 18:00 МСК начинаем.
+          <a href="https://t.me/@druzhok_kruzhok_bot" target="_blank" rel="noopener noreferrer">
+            Уведомления тут в телеге
+          </a>
+        </p>
+      </header>
 
-      <InfoBlock />
+      <InfoBlock class="cmd-out" style="--print-delay: 160ms" />
 
       <div v-if="loading" class="loading-container">
         <LoadingSkeleton :count="4" variant="card" />
       </div>
 
-      <div v-else-if="error" class="error-container">
-        <span class="error-icon">⚠️</span>
-        <p class="error-message">{{ error.message }}</p>
-        <button class="retry-button" @click="retry">Попробовать снова</button>
+      <div v-else-if="error" class="error-container" role="alert">
+        <p class="error-line"><span class="error-fatal">fatal:</span> {{ error.message }}</p>
+        <button class="retry-button" @click="retry">
+          <span class="cmd-prompt">$</span> повторить
+        </button>
       </div>
 
-      <div v-else-if="cardsData" class="cards-container">
+      <div v-else-if="cardsData">
         <CardSection
-          v-for="(cards, section) in cardsData"
+          v-for="(cards, section, i) in cardsData"
           :key="section"
+          class="cmd-out"
+          :style="{ '--print-delay': `${240 + i * 100}ms` }"
           :cards="cards"
           :title="String(section)"
         />
@@ -52,6 +70,45 @@ const retry = (): void => {
   padding: 0 var(--spacing-lg);
 }
 
+.home-header {
+  padding-top: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.home-header h1 {
+  margin: 0;
+}
+
+.cmd-prompt {
+  color: var(--color-accent);
+}
+
+.home-subtitle {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  margin: 0;
+}
+
+.home.cmd-printing .cmd-out {
+  animation-name: home-print;
+  animation-duration: 0.4s;
+  animation-timing-function: steps(18, end);
+}
+
+@keyframes home-print {
+  from {
+    opacity: 1;
+    clip-path: inset(0 100% 0 0);
+    filter: brightness(1.8);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    filter: brightness(1);
+  }
+}
+
 .loading-container {
   padding: var(--spacing-xl);
 }
@@ -59,54 +116,42 @@ const retry = (): void => {
 .error-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-md);
-  padding: var(--spacing-2xl);
+  padding: var(--spacing-lg);
   margin: var(--spacing-xl) 0;
-  background: var(--color-danger-bg);
-  border-radius: var(--radius-lg);
   border: 1px solid var(--color-danger);
-  text-align: center;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-mono);
 }
 
-.error-icon {
-  font-size: 3rem;
-}
-
-.error-message {
-  color: var(--color-danger);
-  font-size: var(--font-size-base);
+.error-line {
   margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  word-break: break-word;
+}
+
+.error-fatal {
+  color: var(--color-danger);
+  font-weight: 700;
 }
 
 .retry-button {
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  background: var(--color-danger);
-  border: none;
-  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--color-bg-tertiary);
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
 .retry-button:hover {
-  opacity: 0.9;
-  transform: translateY(-2px);
-}
-
-.cards-container {
-  animation: fadeIn 0.5s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 @media (max-width: 768px) {

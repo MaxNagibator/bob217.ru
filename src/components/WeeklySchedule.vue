@@ -109,134 +109,154 @@ const scheduleWithStatus = computed(() => {
 </script>
 
 <template>
-  <ul class="schedule-list">
+  <ul class="week">
     <li
       v-for="item in scheduleWithStatus"
       :key="item.day"
-      :class="['schedule-item', { 'current-day': item.isCurrent, past: item.isPast }]"
+      :class="[
+        'day',
+        {
+          'is-today': item.isCurrent,
+          'is-past': item.isPast,
+          'is-future': !item.isCurrent && !item.isPast,
+        },
+      ]"
       :aria-current="item.isCurrent ? 'date' : undefined"
     >
-      <span class="day-label">
-        {{ item.label }}
-        <span v-if="item.isCurrent" class="badge-today">Сегодня</span>
-      </span>
-      —
-      <strong class="day-content">
-        <a
-          v-if="item.link"
-          :href="item.link.url"
-          target="_blank"
-          rel="noopener noreferrer"
-          :aria-label="`${item.link.text} — откроется в новой вкладке`"
-        >
-          {{ item.link.text }}
-        </a>
-        <template v-if="item.link">. </template>
-        {{ item.description }}
-      </strong>
+      <span class="rail" aria-hidden="true"></span>
+      <div class="day-body">
+        <p class="day-head">
+          <span class="day-name">{{ item.label }}</span>
+          <span v-if="item.isCurrent" class="head-ref">HEAD</span>
+        </p>
+        <p class="day-text">
+          <a
+            v-if="item.link"
+            :href="item.link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            :aria-label="`${item.link.text} — откроется в новой вкладке`"
+          >
+            {{ item.link.text }}
+          </a>
+          <template v-if="item.link">. </template>
+          {{ item.description }}
+        </p>
+      </div>
     </li>
   </ul>
 </template>
 
 <style scoped>
-.schedule-list {
-  --schedule-text: #ccc;
-  --schedule-bg: #333;
-  --schedule-bg-hover: #444;
-  --schedule-accent: #4caf50;
-  --schedule-accent-bg: #2a4a2a;
-  --schedule-link: #00bcd4;
-  --schedule-emphasis: #ffcc00;
-  --schedule-badge-bg: #4caf50;
-  --schedule-badge-text: #111;
+.week {
+  --node-y: 12px;
 
   margin: 0;
   padding: 0;
-  list-style-type: none;
+  list-style: none;
 }
 
-.schedule-item {
-  font-size: 1rem;
-  line-height: 1.5;
-  margin-bottom: 1rem;
-  padding: clamp(8px, 1.5vw, 12px);
-  transition:
-    background-color 0.3s ease,
-    border-left 0.3s ease,
-    opacity 0.3s ease;
-  color: var(--schedule-text);
-  border-radius: 5px;
-  background-color: var(--schedule-bg);
-  border-left: 4px solid transparent;
+.day {
+  display: grid;
+  grid-template-columns: 28px 1fr;
 }
 
-.schedule-item:hover {
-  background-color: var(--schedule-bg-hover);
+.rail {
+  position: relative;
 }
 
-.schedule-item.current-day {
-  background-color: var(--schedule-accent-bg);
-  border-left-color: var(--schedule-accent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--schedule-accent) 30%, transparent);
-  animation: highlightDay 1s ease-out;
+.rail::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: var(--color-bg-tertiary);
 }
 
-.schedule-item.past {
-  opacity: 0.6;
+.day:first-child .rail::before {
+  top: var(--node-y);
 }
 
-@keyframes highlightDay {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 color-mix(in srgb, var(--schedule-accent) 0%, transparent);
-  }
-  50% {
-    transform: scale(1.03);
-    box-shadow: 0 0 25px color-mix(in srgb, var(--schedule-accent) 60%, transparent);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 10px color-mix(in srgb, var(--schedule-accent) 30%, transparent);
-  }
+.day:last-child .rail::before {
+  bottom: calc(100% - var(--node-y));
 }
 
-.day-label {
-  display: inline-flex;
+.rail::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: var(--node-y);
+  width: 11px;
+  height: 11px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--color-bg-tertiary);
+  border: 2px solid var(--color-bg-tertiary);
+}
+
+.day.is-future .rail::after {
+  background: var(--color-bg-primary);
+}
+
+.day.is-today .rail::after {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.day-body {
+  min-width: 0;
+  padding-bottom: var(--spacing-md);
+}
+
+.day:last-child .day-body {
+  padding-bottom: 0;
+}
+
+.day.is-past .day-body {
+  opacity: 0.55;
+}
+
+.day-head {
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
+  margin: 0;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
 }
 
-.badge-today {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: var(--schedule-badge-bg);
-  color: var(--schedule-badge-text);
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1.2;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.day.is-today .day-name {
+  color: var(--color-accent);
+  font-weight: 700;
 }
 
-.day-content {
-  color: var(--schedule-emphasis);
+.head-ref {
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  padding: 0 var(--spacing-sm);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-full);
+  color: var(--color-accent);
 }
 
-.schedule-item a {
-  transition: color 0.3s ease;
-  text-decoration: none;
-  color: var(--schedule-link);
+.day-text {
+  margin: var(--spacing-xs) 0 0 0;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
 }
 
-.schedule-item a:hover {
-  color: var(--schedule-emphasis);
+.day-text a {
+  color: var(--color-link);
+}
+
+.day-text a:hover {
+  color: var(--color-link-hover);
   text-decoration: underline;
-}
-
-.schedule-item a:focus-visible {
-  outline: 2px solid var(--schedule-emphasis);
-  outline-offset: 2px;
-  border-radius: 2px;
 }
 </style>
