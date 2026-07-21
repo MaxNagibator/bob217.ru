@@ -9,6 +9,7 @@ import {
   PiggyBank,
   Clock,
   GitPullRequest,
+  Network,
   type LucideIcon,
 } from 'lucide-vue-next'
 
@@ -28,6 +29,7 @@ const navLinks: NavLink[] = [
   { to: '/resume', label: 'Резюме', icon: FileText },
   { to: '/about', label: 'О нас', icon: Info },
   { to: '/pulls', label: 'PR', icon: GitPullRequest },
+  { to: '/repos', label: 'Карта', icon: Network },
   { to: '/tarkov', label: 'Тарков', icon: Clock },
 ]
 

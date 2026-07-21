@@ -30,6 +30,11 @@ const router = createRouter({
       component: () => import('../views/PullRequestsView.vue'),
     },
     {
+      path: '/repos',
+      name: 'repos',
+      component: () => import('../views/RepoMapView.vue'),
+    },
+    {
       path: '/about',
       name: 'about',
       component: () => import('../views/AboutView.vue'),
