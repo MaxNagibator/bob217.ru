@@ -1,5 +1,11 @@
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { nextTick, ref, watch } from 'vue'
+
+type CmdPhase = 'idle' | 'erasing' | 'typing'
+
+const props = defineProps<{
+  text?: string
+}>()
 
 const emit = defineEmits<{
   (e: 'run'): void
@@ -7,41 +13,78 @@ const emit = defineEmits<{
 }>()
 
 const textEl = ref<HTMLElement | null>(null)
-const running = ref(false)
+const shown = ref(props.text ?? '')
+const phase = ref<CmdPhase>('idle')
 const settling = ref(false)
+let interactive = false
 
-const rerun = (event: MouseEvent): void => {
+const isReduced = (): boolean => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+const tune = (width: number): number => {
   const el = textEl.value
-  if (!el || running.value) return
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-  if (event.target instanceof Element && event.target.closest('a')) return
-  if (window.getSelection()?.toString()) return
-
+  if (!el) return 0
   const chars = el.textContent?.trim().length ?? 0
-  if (chars === 0) return
-
-  el.style.setProperty('--cmd-width', `${Math.ceil(el.getBoundingClientRect().width)}px`)
-  el.style.setProperty('--cmd-steps', `steps(${chars})`)
+  el.style.setProperty('--cmd-width', `${Math.ceil(width)}px`)
+  el.style.setProperty('--cmd-steps', `steps(${Math.max(chars, 1)})`)
   el.style.setProperty('--cmd-erase-ms', `${Math.min(100 + chars * 10, 400)}ms`)
   el.style.setProperty('--cmd-type-ms', `${Math.min(220 + chars * 30, 1250)}ms`)
+  return chars
+}
+
+const replay = (): boolean => {
+  const el = textEl.value
+  if (!el || phase.value !== 'idle' || isReduced()) return false
+  if (tune(el.getBoundingClientRect().width) === 0) return false
   settling.value = false
-  running.value = true
+  phase.value = 'erasing'
+  return true
+}
+
+const rerun = (event: MouseEvent): void => {
+  if (event.target instanceof Element && event.target.closest('a')) return
+  if (window.getSelection()?.toString()) return
+  if (!replay()) return
+  interactive = true
   emit('run')
 }
 
-const onTextAnimationEnd = (event: AnimationEvent): void => {
+watch(
+  () => props.text,
+  (next) => {
+    if (next === undefined) return
+    if (isReduced()) shown.value = next
+    else if (phase.value === 'idle') replay()
+  },
+)
+
+const onTextAnimationEnd = async (event: AnimationEvent): Promise<void> => {
+  if (event.animationName.startsWith('cmd-erase')) {
+    shown.value = props.text ?? shown.value
+    await nextTick()
+    const el = textEl.value
+    if (!el) return
+    tune(el.scrollWidth + 2)
+    phase.value = 'typing'
+    return
+  }
+
   if (event.animationName.startsWith('cmd-type')) {
-    running.value = false
+    phase.value = 'idle'
     settling.value = true
-    emit('done')
+    if (interactive) {
+      interactive = false
+      emit('done')
+    }
+    if (props.text !== undefined && props.text !== shown.value) void nextTick().then(replay)
   }
 }
 </script>
 
 <template>
-  <p class="cmd" :class="{ running, settling }" @click="rerun">
+  <p class="cmd" :class="[phase, { settling }]" @click="rerun">
     <span class="cmd-prompt">$&nbsp;</span
-    ><span ref="textEl" class="cmd-text" @animationend="onTextAnimationEnd"><slot /></span
+    ><span ref="textEl" class="cmd-text" @animationend="onTextAnimationEnd"
+      ><slot>{{ shown }}</slot></span
     ><span class="cmd-cursor" aria-hidden="true" @animationend="settling = false"></span>
   </p>
 </template>
@@ -75,17 +118,24 @@ const onTextAnimationEnd = (event: AnimationEvent): void => {
   opacity: 0.35;
 }
 
-.cmd.running .cmd-text {
+.cmd.erasing .cmd-text,
+.cmd.typing .cmd-text {
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
   vertical-align: bottom;
-  animation:
-    cmd-erase var(--cmd-erase-ms) var(--cmd-steps) forwards,
-    cmd-type var(--cmd-type-ms) var(--cmd-steps) calc(var(--cmd-erase-ms) + 180ms) forwards;
 }
 
-.cmd.running .cmd-cursor {
+.cmd.erasing .cmd-text {
+  animation: cmd-erase var(--cmd-erase-ms) var(--cmd-steps) forwards;
+}
+
+.cmd.typing .cmd-text {
+  animation: cmd-type var(--cmd-type-ms) var(--cmd-steps) 180ms both;
+}
+
+.cmd.erasing .cmd-cursor,
+.cmd.typing .cmd-cursor {
   opacity: 1;
   transition: none;
 }

@@ -81,7 +81,7 @@ const wire = computed(() => {
 .card {
   position: absolute;
   width: var(--tip-w);
-  padding: 10px 13px 11px 15px;
+  padding: 10px 13px 11px;
   background: rgba(24, 24, 27, 0.92);
   backdrop-filter: blur(5px);
   border: 1px solid var(--color-bg-tertiary);
@@ -90,17 +90,6 @@ const wire = computed(() => {
     var(--shadow-lg),
     0 0 24px -8px var(--tip-accent);
   overflow: hidden;
-}
-
-.card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--tip-accent);
-  opacity: 0.8;
 }
 
 .card.pin {

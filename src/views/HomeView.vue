@@ -1,58 +1,62 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useCards } from '@/composables/useCards'
+import { useCardRepos } from '@/composables/useCardRepos'
+import { useCmdCycle } from '@/composables/useCmdCycle'
 import { useCmdReplay } from '@/composables/useCmdReplay'
 import CmdLine from '@/components/CmdLine.vue'
 import InfoBlock from '@/components/InfoBlock.vue'
 import CardSection from '@/components/CardSection.vue'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
 import PiggyBank from '@/components/PiggyBank.vue'
-import LoadingSkeleton from '@/components/LoadingSkeleton.vue'
 
-const { cardsData, loading, error } = useCards()
+const BASE_COMMANDS = ['cat README.md', 'git status --short', 'ls -la ~/projects'] as const
 
-const sectionCount = computed(() => Object.keys(cardsData.value ?? {}).length)
+const { cardsData } = useCards()
+const { repos, freshest } = useCardRepos()
+
+const commands = computed<readonly string[]>(() =>
+  freshest.value
+    ? [...BASE_COMMANDS, `git log -1 --oneline ${freshest.value.name}`]
+    : BASE_COMMANDS,
+)
+
+const { current } = useCmdCycle(() => commands.value)
+
+const sectionCount = computed(() => Object.keys(cardsData.value).length)
 const { phaseClass, start, print } = useCmdReplay(() => 240 + sectionCount.value * 100)
-
-const retry = (): void => {
-  window.location.reload()
-}
 </script>
 
 <template>
   <ErrorBoundary>
     <div class="home" :class="phaseClass">
-      <header class="home-header">
-        <CmdLine @run="start" @done="print">cat README.md</CmdLine>
-        <h1 class="cmd-out">Привет, сладенький ^_^</h1>
-        <p class="home-subtitle cmd-out" style="--print-delay: 80ms">
+      <header class="hero">
+        <CmdLine :text="current" @run="start" @done="print" />
+        <h1 class="hero-title cmd-out">Привет, сладенький ^_^</h1>
+        <p class="hero-lead cmd-out" style="--print-delay: 90ms">
           Чем мы тут занимаемся, примерно в 18:00 МСК начинаем.
-          <a href="https://t.me/@druzhok_kruzhok_bot" target="_blank" rel="noopener noreferrer">
-            Уведомления тут в телеге
-          </a>
         </p>
+        <a
+          class="hero-cta cmd-out"
+          style="--print-delay: 140ms"
+          href="https://t.me/@druzhok_kruzhok_bot"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          уведомления тут в телеге
+        </a>
       </header>
 
-      <InfoBlock class="cmd-out" style="--print-delay: 160ms" />
+      <InfoBlock class="cmd-out" style="--print-delay: 200ms" />
 
-      <div v-if="loading" class="loading-container">
-        <LoadingSkeleton :count="4" variant="card" />
-      </div>
-
-      <div v-else-if="error" class="error-container" role="alert">
-        <p class="error-line"><span class="error-fatal">fatal:</span> {{ error.message }}</p>
-        <button class="retry-button" @click="retry">
-          <span class="cmd-prompt">$</span> повторить
-        </button>
-      </div>
-
-      <div v-else-if="cardsData">
+      <div>
         <CardSection
           v-for="(cards, section, i) in cardsData"
           :key="section"
           class="cmd-out"
           :style="{ '--print-delay': `${240 + i * 100}ms` }"
           :cards="cards"
+          :repos="repos"
           :title="String(section)"
         />
       </div>
@@ -70,24 +74,47 @@ const retry = (): void => {
   padding: 0 var(--spacing-lg);
 }
 
-.home-header {
-  padding-top: var(--spacing-xl);
-  margin-bottom: var(--spacing-xl);
+.hero {
+  padding-top: var(--spacing-2xl);
+  margin-bottom: var(--spacing-2xl);
 }
 
-.home-header h1 {
+.hero-title {
+  justify-content: flex-start;
+  width: auto;
+  margin: 0 0 var(--spacing-md);
+  padding: var(--spacing-xs) 0 0;
+  text-align: left;
+  font-size: clamp(var(--font-size-3xl), 6.5vw, var(--font-size-4xl));
+  line-height: var(--line-height-tight);
+}
+
+.hero-lead {
+  max-width: 62ch;
   margin: 0;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--color-text-secondary);
+}
+
+.hero-cta {
+  display: inline-block;
+  padding: var(--spacing-sm) 0;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-link);
+  text-decoration: underline dotted;
+  text-underline-offset: 5px;
+  text-decoration-color: rgba(0, 188, 212, 0.45);
+}
+
+.hero-cta:hover {
+  color: var(--color-link-hover);
+  text-decoration-color: currentcolor;
 }
 
 .cmd-prompt {
   color: var(--color-accent);
-}
-
-.home-subtitle {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  text-align: center;
-  margin: 0;
 }
 
 .home.cmd-printing .cmd-out {
@@ -109,54 +136,14 @@ const retry = (): void => {
   }
 }
 
-.loading-container {
-  padding: var(--spacing-xl);
-}
-
-.error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg);
-  margin: var(--spacing-xl) 0;
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
-  font-family: var(--font-family-mono);
-}
-
-.error-line {
-  margin: 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  word-break: break-word;
-}
-
-.error-fatal {
-  color: var(--color-danger);
-  font-weight: 700;
-}
-
-.retry-button {
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  background: transparent;
-  border: 1px solid var(--color-bg-tertiary);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.retry-button:hover {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
 @media (max-width: 768px) {
   .home {
     padding: 0 var(--spacing-md);
+  }
+
+  .hero {
+    padding-top: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
   }
 }
 </style>

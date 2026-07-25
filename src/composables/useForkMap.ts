@@ -14,6 +14,7 @@ export interface Repo {
   url: string
   desc: string
   sizeKb: number
+  pushed: string
   merged: number
   contributors: Contributor[]
   commits: number | null
@@ -143,6 +144,7 @@ interface RepoResponse {
   html_url: string
   description: string | null
   size: number
+  pushed_at: string
 }
 
 interface SearchItem {
@@ -165,6 +167,8 @@ const commitsUrl = (name: string): string =>
 
 const COMMITS_KEY = 'repo-map-commits'
 const COMMITS_TTL = 24 * 60 * 60 * 1000
+const REPOS_KEY = 'repo-map-list'
+const REPOS_TTL = 30 * 60 * 1000
 const COMMITS_LANES = 5
 
 export type CommitsState = 'idle' | 'loading' | 'ready' | 'partial'
@@ -181,6 +185,78 @@ const fetchJson = async <T>(url: string): Promise<T> => {
     throw new Error(res.status === 403 ? 'Лимит GitHub исчерпан' : `GitHub ${res.status}`)
   return (await res.json()) as T
 }
+
+let repoListPromise: Promise<RepoResponse[]> | null = null
+let repoListAt = 0
+
+const readReposCache = (): RepoResponse[] | null => {
+  try {
+    const raw = localStorage.getItem(REPOS_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { ts: number; data: RepoResponse[] }
+    return Date.now() - parsed.ts < REPOS_TTL ? parsed.data : null
+  } catch {
+    return null
+  }
+}
+
+const writeReposCache = (list: RepoResponse[]): void => {
+  const data = list.map((r) => ({
+    name: r.name,
+    stargazers_count: r.stargazers_count,
+    language: r.language,
+    forks_count: r.forks_count,
+    html_url: r.html_url,
+    description: r.description,
+    size: r.size,
+    pushed_at: r.pushed_at,
+  }))
+  try {
+    localStorage.setItem(REPOS_KEY, JSON.stringify({ ts: Date.now(), data }))
+  } catch {
+    return
+  }
+}
+
+const fetchRepoList = (): Promise<RepoResponse[]> => {
+  if (repoListPromise && Date.now() - repoListAt >= REPOS_TTL) repoListPromise = null
+  if (!repoListPromise) {
+    repoListAt = Date.now()
+    repoListPromise = (async () => {
+      const cached = readReposCache()
+      if (cached) return cached
+      const list = await fetchJson<RepoResponse[]>(REPOS_URL)
+      writeReposCache(list)
+      return list
+    })().catch((e: unknown) => {
+      repoListPromise = null
+      throw e
+    })
+  }
+  return repoListPromise
+}
+
+const toRepo = (r: RepoResponse, contributors: Contributor[], commits: number | null): Repo => {
+  const domain = DOMAIN_OF[r.name] ?? 'misc'
+  return {
+    name: r.name,
+    stars: r.stargazers_count,
+    lang: r.language ?? 'прочее',
+    forks: r.forks_count,
+    url: r.html_url,
+    desc: r.description ?? '',
+    sizeKb: r.size,
+    pushed: r.pushed_at,
+    merged: contributors.reduce((sum, c) => sum + c.merged, 0),
+    contributors,
+    commits,
+    domain,
+    domainLabel: domainLabel(domain),
+  }
+}
+
+export const loadRepos = async (): Promise<Repo[]> =>
+  (await fetchRepoList()).map((r) => toRepo(r, [], null))
 
 const loadContributors = async (
   onPage: (found: number) => void,
@@ -261,29 +337,14 @@ export function useForkMap() {
     error.value = null
     stage.value = 'repos'
     try {
-      const list = await fetchJson<RepoResponse[]>(REPOS_URL)
+      const list = await fetchRepoList()
       foundRepos.value = list.length
       stage.value = 'pulls'
       const contributors = await loadContributors((n) => (foundPulls.value = n))
       const cached = readCommitsCache()
-      repos.value = list.map((r) => {
-        const domain = DOMAIN_OF[r.name] ?? 'misc'
-        const people = contributors.get(r.name) ?? []
-        return {
-          name: r.name,
-          stars: r.stargazers_count,
-          lang: r.language ?? 'прочее',
-          forks: r.forks_count,
-          url: r.html_url,
-          desc: r.description ?? '',
-          sizeKb: r.size,
-          merged: people.reduce((sum, c) => sum + c.merged, 0),
-          contributors: people,
-          commits: cached[r.name] ?? null,
-          domain,
-          domainLabel: domainLabel(domain),
-        }
-      })
+      repos.value = list.map((r) =>
+        toRepo(r, contributors.get(r.name) ?? [], cached[r.name] ?? null),
+      )
       stage.value = 'ready'
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Не удалось загрузить карту'
