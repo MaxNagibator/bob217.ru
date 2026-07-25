@@ -14,6 +14,7 @@ import CmdLine from '@/components/CmdLine.vue'
 import LoadingSkeleton from '@/components/LoadingSkeleton.vue'
 import { useCmdReplay } from '@/composables/useCmdReplay'
 import { usePullRequests } from '@/composables/usePullRequests'
+import { plural } from '@/utils/format'
 
 const { pulls, total, stats, loading, error, load } = usePullRequests()
 
@@ -23,14 +24,6 @@ const sortedPulls = computed(() =>
 
 const formatDate = (iso: string): string =>
   new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
-
-const plural = (n: number, one: string, few: string, many: string): string => {
-  const m10 = n % 10
-  const m100 = n % 100
-  if (m10 === 1 && m100 !== 11) return one
-  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few
-  return many
-}
 
 const ageLabel = (iso: string): string => {
   const days = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000))
