@@ -59,6 +59,7 @@ export interface SatHit {
 
 export interface TipState {
   repo: Repo
+  code: string
   x: number
   y: number
   pinned: boolean

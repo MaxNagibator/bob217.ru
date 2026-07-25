@@ -82,8 +82,7 @@ export function useRepoMapScene(params: SceneParams) {
   let hoverDomain: string | null = null
   let satHover: SatHit | null = null
   let hoverCore = false
-  let focusSX = 0
-  let focusSY = 0
+  let tipNode: Node | null = null
 
   const metricVal = (n: Node): number => {
     const r = n.repo
@@ -304,11 +303,15 @@ export function useRepoMapScene(params: SceneParams) {
     if (v !== counter.value) counter.value = v
   }
 
-  const syncPinned = (): void => {
-    if (!focusNode || !tip.value?.pinned) return
-    const x = Math.round(focusSX)
-    const y = Math.round(focusSY)
+  const tipAt = (n: Node): [number, number] => {
+    const [x, y] = vp.w2s(n.bx + n.ox, n.by + n.oy)
+    return [Math.round(x), Math.round(y)]
+  }
+
+  const syncTip = (): void => {
     const t = tip.value
+    if (!tipNode || !t) return
+    const [x, y] = tipAt(tipNode)
     if (Math.abs(t.x - x) > 0.6 || Math.abs(t.y - y) > 0.6) tip.value = { ...t, x, y }
   }
 
@@ -318,13 +321,8 @@ export function useRepoMapScene(params: SceneParams) {
     const dt = Math.min(0.05, (t - last) / 1000)
     last = t
     update(dt)
-    if (focusNode) {
-      const [fx, fy] = vp.w2s(focusNode.bx + focusNode.ox, focusNode.by + focusNode.oy)
-      focusSX = fx
-      focusSY = fy
-    }
     draw()
-    syncPinned()
+    syncTip()
     tickCounter()
     raf = requestAnimationFrame(tick)
   }
@@ -347,7 +345,7 @@ export function useRepoMapScene(params: SceneParams) {
     satHover = null
     hoverCore = false
     hoverDomain = null
-    tip.value = null
+    hideTip()
     satTip.value = null
     coreTip.value = null
     counter.value = 0
@@ -378,25 +376,36 @@ export function useRepoMapScene(params: SceneParams) {
     if (mounted) rebuildAll()
   })
 
-  const showTip = (n: Node, sx: number, sy: number, pin: boolean): void => {
-    tip.value = { repo: n.repo, x: sx, y: sy, pinned: pin }
+  const catalogCode = (n: Node): string => {
+    const order = n.anchor.chain
+      .slice()
+      .sort((a, b) => b.repo.stars - a.repo.stars || a.repo.name.localeCompare(b.repo.name))
+    const rank = order.indexOf(n) + 1
+    return `${n.anchor.key.toUpperCase()}-${String(rank).padStart(2, '0')}`
+  }
+
+  const showTip = (n: Node, pin: boolean): void => {
+    const [x, y] = tipAt(n)
+    tipNode = n
+    tip.value = { repo: n.repo, code: catalogCode(n), x, y, pinned: pin }
     satTip.value = null
     coreTip.value = null
   }
 
   const hideTip = (): void => {
+    tipNode = null
     tip.value = null
   }
 
-  const satTipFor = (hit: SatHit, sx: number, sy: number): SatTipState => ({
+  const satTipFor = (hit: SatHit): SatTipState => ({
     login: hit.login,
     repo: hit.node.repo.name,
     merged: hit.merged,
     share: Math.round((hit.merged / (hit.node.repo.merged || 1)) * 100),
     people: hit.node.repo.contributors.length,
     last: hit.last,
-    x: sx,
-    y: sy,
+    x: Math.round(hit.x),
+    y: Math.round(hit.y),
   })
 
   const focusOn = (n: Node): void => {
@@ -410,10 +419,7 @@ export function useRepoMapScene(params: SceneParams) {
     vp.cam.tx = n.bx + n.ox
     vp.cam.ty = n.by + n.oy
     vp.cam.ts = 1.6
-    const [sx, sy] = vp.w2s(n.bx + n.ox, n.by + n.oy)
-    focusSX = sx
-    focusSY = sy
-    tip.value = { repo: n.repo, x: Math.round(sx), y: Math.round(sy), pinned: true }
+    showTip(n, true)
   }
 
   const resetHome = (): void => {
@@ -469,7 +475,7 @@ export function useRepoMapScene(params: SceneParams) {
       hoverCore = false
       hoverDomain = null
       canvas.classList.add('pointing')
-      if (!focusNode) showTip(n, sx, sy, false)
+      if (!focusNode) showTip(n, false)
       return
     }
     if (focusNode) {
@@ -486,8 +492,8 @@ export function useRepoMapScene(params: SceneParams) {
       hoverCore = false
       hoverDomain = null
       canvas.classList.add('pointing')
-      satTip.value = satTipFor(s, sx, sy)
-      tip.value = null
+      satTip.value = satTipFor(s)
+      hideTip()
       coreTip.value = null
       return
     }
@@ -499,7 +505,7 @@ export function useRepoMapScene(params: SceneParams) {
       canvas.classList.add('pointing')
       const [hx, hy] = vp.w2s(0, 0)
       coreTip.value = { x: hx, y: hy }
-      tip.value = null
+      hideTip()
       satTip.value = null
       return
     }
@@ -591,7 +597,7 @@ export function useRepoMapScene(params: SceneParams) {
     }
     const s = pickSat(c, sx, sy)
     if (s) {
-      satTip.value = satTipFor(s, sx, sy)
+      satTip.value = satTipFor(s)
       return
     }
     if (pickCore(c, sx, sy)) {

@@ -146,7 +146,7 @@ onBeforeUnmount(() => {
 
     <RepoTip v-if="tip" :tip="tip" :stage-w="stageW" :stage-h="stageH" />
 
-    <ContributorTip v-if="satTip && !tip" :tip="satTip" :stage-w="stageW" />
+    <ContributorTip v-if="satTip && !tip" :tip="satTip" :stage-w="stageW" :stage-h="stageH" />
 
     <CoreTip v-if="coreTip && !tip && !satTip" :tip="coreTip" :stats="stats" />
   </div>

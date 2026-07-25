@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
+import MapCallout from '@/components/repomap/MapCallout.vue'
 import type { TipState } from '@/composables/repoMap/types'
-import { fmtSize, plural } from '@/utils/format'
+import { langColor } from '@/composables/useForkMap'
+import { fmtSize } from '@/utils/format'
 
 const props = defineProps<{
   tip: TipState
@@ -9,72 +11,115 @@ const props = defineProps<{
   stageH: number
 }>()
 
-const style = computed(() => {
-  const flipX = props.tip.x > props.stageW * 0.62
-  const flipY = props.tip.y > props.stageH * 0.62
-  return {
-    left: `${props.tip.x + (flipX ? -16 : 16)}px`,
-    top: `${props.tip.y + (flipY ? -8 : 8)}px`,
-    transform: `translate(${flipX ? '-100%' : '0'}, ${flipY ? '-100%' : '0'})`,
-  }
+const accent = computed(() => langColor(props.tip.repo.lang))
+
+const rows = computed<[string, string][]>(() => {
+  const r = props.tip.repo
+  const list: [string, string][] = [
+    ['звёздная величина', (6 - 2.5 * Math.log10(r.stars + 1)).toFixed(1)],
+    ['звёзды', String(r.stars)],
+    ['язык', r.lang],
+    ['форки', String(r.forks)],
+    ['объём', fmtSize(r.sizeKb)],
+  ]
+  if (r.commits !== null) list.push(['коммиты', String(r.commits)])
+  if (r.merged) list.push(['принято PR', String(r.merged)])
+  return list
 })
 </script>
 
 <template>
-  <div class="tip" :class="{ pin: tip.pinned }" :style="style">
-    <div class="nm">{{ tip.repo.name }}</div>
-    <div v-if="tip.repo.desc" class="ds">{{ tip.repo.desc }}</div>
-    <div class="dm">домен: {{ tip.repo.domainLabel }}</div>
-    <div class="st">
-      ★ {{ tip.repo.stars }} · {{ tip.repo.lang }} · forks {{ tip.repo.forks }} ·
-      {{ fmtSize(tip.repo.sizeKb)
-      }}<template v-if="tip.repo.commits !== null">
-        · {{ tip.repo.commits }}
-        {{ plural(tip.repo.commits, 'коммит', 'коммита', 'коммитов') }}</template
-      ><template v-if="tip.repo.merged"> · merged {{ tip.repo.merged }}</template>
+  <MapCallout
+    :x="tip.x"
+    :y="tip.y"
+    :stage-w="stageW"
+    :stage-h="stageH"
+    :accent="accent"
+    :width="292"
+    :pinned="tip.pinned"
+  >
+    <div class="head">
+      <span class="code">{{ tip.code }}</span>
+      <span class="dom">{{ tip.repo.domainLabel }}</span>
     </div>
+    <div class="nm">
+      <i class="bullet"></i>
+      {{ tip.repo.name }}
+    </div>
+    <div class="rule"></div>
+    <div v-if="tip.repo.desc" class="ds">{{ tip.repo.desc }}</div>
+    <dl class="tbl">
+      <div v-for="[key, value] in rows" :key="key" class="row">
+        <dt>{{ key }}</dt>
+        <i class="fill"></i>
+        <dd>{{ value }}</dd>
+      </div>
+    </dl>
     <div v-if="tip.repo.contributors.length" class="fk">
+      <span class="cap">соавторы</span>
       {{ tip.repo.contributors.map((c) => `${c.login} ×${c.merged}`).join(' · ') }}
     </div>
     <a v-if="tip.pinned" class="go" :href="tip.repo.url" target="_blank" rel="noopener noreferrer">
       Открыть на GitHub →
     </a>
-  </div>
+  </MapCallout>
 </template>
 
 <style scoped>
-.tip {
-  position: absolute;
-  z-index: var(--z-tooltip);
-  pointer-events: none;
-  background: rgba(30, 30, 30, 0.9);
-  backdrop-filter: blur(4px);
-  border: 1px solid var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  max-width: 300px;
-  box-shadow: var(--shadow-lg);
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
 }
 
-.tip.pin {
-  pointer-events: auto;
-  border-color: var(--color-accent);
-  box-shadow:
-    var(--shadow-lg),
-    0 0 18px rgba(255, 204, 0, 0.18);
+.code {
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--tip-accent);
+}
+
+.dom {
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
 }
 
 .nm {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 4px;
   font-family: var(--font-family-heading);
   font-weight: 600;
   font-size: 14px;
   color: var(--color-text-primary);
+  word-break: break-word;
+}
+
+.bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tip-accent);
+  box-shadow: 0 0 8px var(--tip-accent);
+  flex: none;
+}
+
+.rule {
+  height: 1px;
+  margin: 8px 0;
+  background: linear-gradient(90deg, var(--tip-accent), transparent);
+  opacity: 0.55;
+  transform-origin: left;
+  animation: rule 340ms ease both;
 }
 
 .ds {
   font-size: 12px;
+  line-height: 1.45;
   color: var(--color-text-secondary);
-  margin-top: 3px;
+  margin-bottom: 8px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -82,31 +127,65 @@ const style = computed(() => {
   overflow: hidden;
 }
 
-.dm,
-.st {
+.tbl {
+  margin: 0;
   font-family: var(--font-family-mono);
   font-size: 11px;
-  color: var(--color-text-muted);
-  margin-top: 3px;
-  font-variant-numeric: tabular-nums;
 }
 
-.st {
-  margin-top: 6px;
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.row + .row {
+  margin-top: 3px;
+}
+
+dt {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.fill {
+  flex: 1;
+  height: 0;
+  border-bottom: 1px dotted var(--color-text-muted);
+  opacity: 0.4;
+  transform: translateY(-3px);
+}
+
+dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .fk {
   font-family: var(--font-family-mono);
   font-size: 11px;
   color: var(--color-link);
-  margin-top: 5px;
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-bg-tertiary);
   line-height: 1.5;
   word-break: break-word;
 }
 
+.cap {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
 .go {
   display: inline-block;
-  margin-top: 9px;
+  margin-top: 10px;
   font-family: var(--font-family-mono);
   font-size: 12px;
   color: var(--color-link);
@@ -117,7 +196,23 @@ const style = computed(() => {
   transition: border-color var(--transition-fast);
 }
 
-.go:hover {
+.go:hover,
+.go:focus-visible {
   border-color: var(--color-link);
+}
+
+@keyframes rule {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rule {
+    animation: none;
+  }
 }
 </style>

@@ -1,63 +1,72 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
+import MapCallout from '@/components/repomap/MapCallout.vue'
 import type { SatTipState } from '@/composables/repoMap/types'
 import { fmtDate, plural } from '@/utils/format'
 
-const props = defineProps<{
+defineProps<{
   tip: SatTipState
   stageW: number
+  stageH: number
 }>()
-
-const style = computed(() => {
-  const flipX = props.tip.x > props.stageW * 0.7
-  return {
-    left: `${props.tip.x + (flipX ? -14 : 14)}px`,
-    top: `${props.tip.y + 14}px`,
-    transform: `translate(${flipX ? '-100%' : '0'}, 0)`,
-  }
-})
 </script>
 
 <template>
-  <div class="sattip" :style="style">
+  <MapCallout
+    :x="tip.x"
+    :y="tip.y"
+    :stage-w="stageW"
+    :stage-h="stageH"
+    accent="#ffcc00"
+    :width="226"
+  >
     <div class="head">
-      <span class="dot"></span>
-      <b>{{ tip.login }}</b>
-      <span class="role">в {{ tip.repo }}</span>
+      <span class="cap">соавтор</span>
+      <span class="who">
+        <b>{{ tip.login }}</b>
+        <span class="role">в {{ tip.repo }}</span>
+      </span>
     </div>
-    <div class="stats">
+    <div class="big">
       <b class="num">{{ tip.merged }}</b>
-      {{ plural(tip.merged, 'принятый PR', 'принятых PR', 'принятых PR') }}
-      <template v-if="tip.people > 1"> · {{ tip.share }} % вклада</template>
-      <template v-else> · единственный соавтор</template>
+      <span class="lbl">{{ plural(tip.merged, 'принятый PR', 'принятых PR', 'принятых PR') }}</span>
     </div>
+    <div v-if="tip.people > 1" class="share">
+      <div class="bar"><i :style="{ width: `${tip.share}%` }"></i></div>
+      <div class="srow">
+        <span class="pct">{{ tip.share }} %</span>
+        <span class="of">
+          из {{ tip.people }} {{ plural(tip.people, 'соавтора', 'соавторов', 'соавторов') }}
+        </span>
+      </div>
+    </div>
+    <div v-else class="solo">единственный соавтор</div>
     <div v-if="tip.last" class="last">последний {{ fmtDate(tip.last) }}</div>
-    <div class="hint">клик → профиль на github</div>
-  </div>
+    <div class="hint">клик – профиль на github</div>
+  </MapCallout>
 </template>
 
 <style scoped>
-.sattip {
-  position: absolute;
-  z-index: var(--z-tooltip);
-  pointer-events: none;
-  background: rgba(30, 30, 30, 0.9);
-  backdrop-filter: blur(4px);
-  border: 1px solid var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
-  padding: 8px 11px;
+.head {
   font-family: var(--font-family-mono);
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  box-shadow: var(--shadow-lg);
-  max-width: 240px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  word-break: break-word;
 }
 
-.head {
+.who {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 7px;
+  align-items: baseline;
+  gap: 2px 6px;
+}
+
+.cap {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--tip-accent);
+  margin-bottom: 3px;
 }
 
 b {
@@ -69,34 +78,98 @@ b {
   color: var(--color-text-muted);
 }
 
-.dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: 0 0 8px var(--color-accent);
-  flex: none;
-}
-
-.stats {
-  color: var(--color-text-muted);
-  margin-top: 5px;
-  font-variant-numeric: tabular-nums;
+.big {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 8px;
+  font-family: var(--font-family-mono);
 }
 
 .num {
-  color: var(--color-accent);
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--tip-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.lbl {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.share {
+  margin-top: 9px;
+}
+
+.bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-bg-tertiary);
+  overflow: hidden;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--tip-accent);
+  box-shadow: 0 0 10px -2px var(--tip-accent);
+  transform-origin: left;
+  animation: grow 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.srow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+}
+
+.pct {
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.of,
+.solo,
+.last,
+.hint {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.solo {
+  margin-top: 9px;
 }
 
 .last {
+  margin-top: 6px;
   color: var(--color-text-secondary);
-  margin-top: 4px;
 }
 
 .hint {
-  color: var(--color-text-muted);
-  opacity: 0.7;
-  margin-top: 6px;
+  margin-top: 7px;
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar i {
+    animation: none;
+  }
 }
 </style>
