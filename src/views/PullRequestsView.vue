@@ -1,45 +1,22 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
-import {
-  MessageSquare,
-  Smile,
-  Clock,
-  GitCommit,
-  FileDiff,
-  ExternalLink,
-  RefreshCw,
-  AlertCircle,
-} from 'lucide-vue-next'
 import CmdLine from '@/components/CmdLine.vue'
-import LoadingSkeleton from '@/components/LoadingSkeleton.vue'
+import PullBranch from '@/components/pulls/PullBranch.vue'
 import { useCmdReplay } from '@/composables/useCmdReplay'
 import { usePullRequests } from '@/composables/usePullRequests'
-import { plural } from '@/utils/format'
+import { fmtDate, plural } from '@/utils/format'
 
-const { pulls, total, stats, loading, error, load } = usePullRequests()
+type GraphView = 'boot' | 'error' | 'empty' | 'ready'
 
-const sortedPulls = computed(() =>
-  [...pulls.value].sort((a, b) => Number(a.draft) - Number(b.draft)),
-)
+const { rows, total, stats, loading, loaded, error, load } = usePullRequests()
 
-const formatDate = (iso: string): string =>
-  new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+const view = computed<GraphView>(() => {
+  if (rows.value.length) return 'ready'
+  if (error.value) return 'error'
+  return loaded.value ? 'empty' : 'boot'
+})
 
-const ageLabel = (iso: string): string => {
-  const days = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000))
-  return days === 0 ? 'сегодня' : `${days} ${plural(days, 'день', 'дня', 'дней')}`
-}
-
-type DiffCell = 'add' | 'del' | 'none'
-
-const diffCells = (add: number, del: number): DiffCell[] => {
-  const total = add + del
-  if (total === 0) return ['none', 'none', 'none', 'none', 'none']
-  let green = Math.round((add / total) * 5)
-  if (add > 0 && green === 0) green = 1
-  if (del > 0 && green === 5) green = 4
-  return Array.from({ length: 5 }, (_, i): DiffCell => (i < green ? 'add' : 'del'))
-}
+const today = computed(() => fmtDate(new Date().toISOString()))
 
 const logKey = ref(0)
 const { phaseClass, start, print } = useCmdReplay(() => 1100)
@@ -64,102 +41,81 @@ onMounted(load)
           --state open</CmdLine
         >
         <h1 class="cmd-out">Открытые Pull Request</h1>
-        <div class="head-actions cmd-out" style="--print-delay: 80ms">
-          <button class="refresh-button" :disabled="loading" @click="load" aria-label="Обновить">
-            <RefreshCw :size="16" :class="{ spin: loading }" />
-            <span>Обновить</span>
-          </button>
-        </div>
       </header>
 
-      <LoadingSkeleton v-if="loading && !pulls.length" :count="4" variant="card" />
-
-      <div v-else-if="error" class="pulls-error">
-        <AlertCircle :size="24" />
-        <span>{{ error }}</span>
-      </div>
-
-      <p v-else-if="!pulls.length" class="pulls-empty">Открытых PR нет – всё уже в master.</p>
-
-      <template v-else>
-        <p class="shortstat cmd-out" style="--print-delay: 160ms">
+      <p class="status cmd-out" style="--print-delay: 80ms">
+        <template v-if="view === 'ready'">
           <span class="n accent">{{ stats.total }}</span>
-          PR {{ plural(stats.total, 'открыт', 'открыто', 'открыто') }} ·
-          <span class="n ready">{{ stats.ready }}</span>
-          {{ plural(stats.ready, 'готов', 'готовы', 'готовы') }} ·
-          <span class="n draft">{{ stats.draft }}</span>
-          {{ plural(stats.draft, 'черновик', 'черновика', 'черновиков') }} ·
+          PR {{ plural(stats.total, 'открыт', 'открыто', 'открыто') }} в
           <span class="n">{{ stats.repos }}</span>
-          {{ plural(stats.repos, 'репозиторий', 'репозитория', 'репозиториев') }}
-        </p>
-
-        <ul :key="logKey" class="log cmd-out" style="--print-delay: 200ms">
-          <li
-            v-for="(pr, i) in sortedPulls"
-            :key="pr.id"
-            class="entry"
-            :class="pr.draft ? 'is-draft' : 'is-ready'"
-            :style="{ '--i': i }"
+          {{ plural(stats.repos, 'репозитории', 'репозиториях', 'репозиториях')
+          }}<template v-if="stats.draft"
+            >, <span class="n">{{ stats.draft }}</span>
+            {{ plural(stats.draft, 'черновик', 'черновика', 'черновиков') }}</template
           >
-            <span class="rail" aria-hidden="true">
-              <span class="node"></span>
-            </span>
-            <a :href="pr.url" class="entry-link" target="_blank" rel="noopener noreferrer">
-              <span class="pull-title">
-                <span class="pull-title-text">{{ pr.title }}</span>
-                <span v-if="pr.draft" class="pull-badge">Черновик</span>
-              </span>
-              <span class="pull-meta">
-                <span class="pull-repo">{{ pr.repo }}</span> #{{ pr.number }} ·
-                <img :src="pr.avatar" :alt="''" class="pull-avatar" loading="lazy" />
-                {{ pr.author }} · {{ formatDate(pr.createdAt) }}
-              </span>
-              <span class="pull-stats">
-                <span class="stat"><Clock :size="13" /> {{ ageLabel(pr.createdAt) }}</span>
-                <span v-if="pr.commits !== null" class="stat">
-                  <GitCommit :size="13" /> {{ pr.commits }}
-                </span>
-                <span v-if="pr.changedFiles !== null" class="stat">
-                  <FileDiff :size="13" /> {{ pr.changedFiles }}
-                </span>
-                <span v-if="pr.additions !== null" class="stat diffstat">
-                  <span class="add">+{{ pr.additions }}</span>
-                  <span class="del">−{{ pr.deletions ?? 0 }}</span>
-                  <span class="diffbar" aria-hidden="true">
-                    <span
-                      v-for="(cell, j) in diffCells(pr.additions, pr.deletions ?? 0)"
-                      :key="j"
-                      class="diffcell"
-                      :class="cell"
-                      :style="{ '--j': j }"
-                    ></span>
-                  </span>
-                </span>
-                <span v-if="pr.comments" class="stat">
-                  <MessageSquare :size="13" /> {{ pr.comments }}
-                </span>
-                <span v-if="pr.reactions" class="stat">
-                  <Smile :size="13" /> {{ pr.reactions }}
-                </span>
-              </span>
-              <ExternalLink class="pull-external" :size="16" />
-            </a>
-          </li>
-          <li class="trunk" aria-hidden="true" :style="{ '--i': sortedPulls.length }">
-            <span class="rail">
-              <span class="node trunk-node"></span>
-            </span>
-            <span class="trunk-label">master</span>
-          </li>
-        </ul>
-      </template>
+          <span v-if="error" class="stale">· {{ error }}</span>
+        </template>
+        <template v-else-if="view === 'boot'">спрашиваю у GitHub…</template>
+      </p>
 
-      <p
-        v-if="!loading && total > pulls.length"
-        class="pulls-more cmd-out"
-        style="--print-delay: 200ms"
-      >
-        Показаны {{ pulls.length }} из {{ total }}.
+      <ul :key="logKey" class="graph cmd-out" style="--print-delay: 160ms">
+        <template v-if="view === 'boot'">
+          <li v-for="i in 3" :key="i" class="row ghost" :style="{ '--i': i - 1 }">
+            <span class="rail" aria-hidden="true">
+              <i class="trunk"></i>
+              <i class="node"></i>
+            </span>
+            <span class="bars" aria-hidden="true">
+              <i class="bar w-short"></i>
+              <i class="bar w-long"></i>
+            </span>
+          </li>
+        </template>
+
+        <PullBranch v-for="(row, i) in rows" :key="row.pr.id" :row="row" :index="i" />
+
+        <li v-if="view === 'error'" class="row fail">
+          <span class="rail" aria-hidden="true">
+            <i class="trunk"></i>
+            <i class="node"></i>
+          </span>
+          <div class="fail-body">
+            <p class="fatal"><span class="kw">fatal:</span> {{ error }}</p>
+            <button class="cmd-btn" @click="load">
+              <span class="p">$</span> {{ loading ? 'повторяю…' : 'повторить' }}
+            </button>
+          </div>
+        </li>
+
+        <li v-else-if="view === 'empty'" class="row note">
+          <span class="rail" aria-hidden="true">
+            <i class="trunk"></i>
+            <i class="node"></i>
+          </span>
+          <p class="note-text"># ничего не висит – всё уже в master</p>
+        </li>
+
+        <li class="row head" :style="{ '--i': rows.length }">
+          <span class="rail" aria-hidden="true">
+            <i class="trunk"></i>
+            <i class="node"></i>
+          </span>
+          <p class="head-label">
+            <span class="ref">master</span>
+            <span class="tag">HEAD</span>
+            <i class="fill" aria-hidden="true"></i>
+            <span class="when">{{ today }}</span>
+          </p>
+        </li>
+      </ul>
+
+      <p v-if="view !== 'error'" class="foot cmd-out" style="--print-delay: 1050ms">
+        <button class="cmd-btn" :disabled="loading" @click="load">
+          <span class="p">$</span> {{ loading ? 'обновляю…' : 'обновить' }}
+        </button>
+        <span v-if="view === 'ready' && total > rows.length" class="foot-note">
+          показаны {{ rows.length }} из {{ total }}
+        </span>
       </p>
     </div>
   </div>
@@ -172,141 +128,183 @@ onMounted(load)
 }
 
 .pulls-container {
+  --rail-tick: #5c5c5c;
+  --rail-w: 58px;
+  --lane-a: 15px;
+  --lane-b: 40px;
+  --base-y: 12px;
+  --tip-y: 32px;
+  --curve: 12px;
+
   width: 100%;
-  max-width: var(--max-width-content);
+  max-width: 760px;
   margin: 0 auto;
 }
 
 .pulls-header {
-  margin-bottom: var(--spacing-xl);
-}
-
-.cmd a {
-  color: var(--color-link);
-  text-decoration: none;
-}
-
-.cmd a:hover {
-  text-decoration: underline;
+  margin-bottom: var(--spacing-lg);
 }
 
 .pulls-header h1 {
   margin: 0;
 }
 
-.head-actions {
-  display: flex;
-  justify-content: center;
+.cmd a {
+  color: var(--color-link);
 }
 
-.refresh-button {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-md);
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  background: transparent;
-  border: 1px solid var(--color-bg-tertiary);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition: all var(--transition-fast);
+.cmd a:hover {
+  text-decoration: underline;
 }
 
-.refresh-button:hover:not(:disabled) {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.refresh-button:disabled {
-  cursor: default;
-  opacity: 0.7;
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.pulls-error {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-lg);
-  color: var(--color-danger);
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-lg);
-}
-
-.pulls-empty,
-.pulls-more {
-  text-align: center;
-  font-family: var(--font-family-mono);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-}
-
-.shortstat {
+.status {
+  min-height: 1.6em;
+  margin: 0 0 var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
   font-family: var(--font-family-mono);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
-  margin: 0 0 var(--spacing-lg) 0;
-  padding-bottom: var(--spacing-md);
   border-bottom: 1px solid var(--color-bg-tertiary);
 }
 
 .n {
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
 }
 
 .n.accent {
   color: var(--color-accent);
 }
 
-.n.ready {
-  color: var(--color-success);
+.stale {
+  color: var(--color-danger);
 }
 
-.n.draft {
-  color: var(--color-text-secondary);
-}
-
-.log {
-  --node-y: 26px;
-  display: flex;
-  flex-direction: column;
+.graph {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.entry,
-.trunk {
-  --stagger: min(calc(var(--i) * 45ms), 600ms);
-  position: relative;
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  transform-origin: top center;
-  animation: entry-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  animation-delay: var(--stagger);
+.pulls.cmd-clearing .graph,
+.pulls.cmd-printing .graph {
+  animation: none;
 }
 
-@keyframes entry-in {
+.pulls.cmd-clearing :deep(.tip) {
+  animation: tip-back 0.28s cubic-bezier(0.55, 0, 1, 0.45) both;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+@keyframes tip-back {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%)
+      translate(calc(var(--lane-a) - var(--lane-b)), calc(var(--base-y) - var(--tip-y))) scale(0.3);
+  }
+}
+
+.pulls.cmd-clearing :deep(.fork) {
+  animation: fork-back 0.3s cubic-bezier(0.55, 0, 1, 0.45) both;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+@keyframes fork-back {
+  to {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+.pulls.cmd-clearing :deep(.trunk) {
+  transform-origin: bottom;
+  animation: trunk-zip 0.3s ease-in both;
+  animation-delay: calc(var(--i, 0) * 30ms + 140ms);
+}
+
+@keyframes trunk-zip {
+  to {
+    transform: scaleY(0);
+  }
+}
+
+.pulls.cmd-clearing .row:not(.head) .node,
+.pulls.cmd-clearing :deep(.base) {
+  animation: node-back 0.24s ease-in both;
+  animation-delay: calc(var(--i, 0) * 30ms + 120ms);
+}
+
+@keyframes node-back {
+  to {
+    transform: translate(-50%, -50%) scale(0);
+  }
+}
+
+.pulls.cmd-clearing :deep(.body),
+.pulls.cmd-clearing .bars,
+.pulls.cmd-clearing .fail-body,
+.pulls.cmd-clearing .note-text,
+.pulls.cmd-clearing .head-label {
+  animation: body-back 0.26s ease-in both;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+
+@keyframes body-back {
+  to {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
+
+.pulls.cmd-clearing .head .node {
+  animation: swallow 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(var(--i, 0) * 30ms + 160ms);
+}
+
+@keyframes swallow {
+  45% {
+    transform: translate(-50%, -50%) scale(1.8);
+    box-shadow: 0 0 0 14px rgba(255, 204, 0, 0.26);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0);
+    box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
+  }
+}
+
+.row {
+  --trail: min(calc(var(--i, 0) * 70ms), 420ms);
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr;
+}
+
+.row .trunk {
+  animation: draw-down 0.4s ease backwards;
+  animation-delay: var(--trail);
+}
+
+.row .node {
+  animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: calc(var(--trail) + 90ms);
+}
+
+.bars,
+.fail-body,
+.note-text,
+.head-label {
+  animation: settle 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--trail) + 60ms);
+}
+
+@keyframes pop {
+  from {
+    transform: translate(-50%, -50%) scale(0);
+  }
+}
+
+@keyframes settle {
   from {
     opacity: 0;
-    transform: perspective(700px) rotateX(-24deg) translateY(18px);
-  }
-  60% {
-    opacity: 1;
-    transform: perspective(700px) rotateX(4deg) translateY(-2px);
+    transform: translateX(-10px);
   }
 }
 
@@ -314,237 +312,243 @@ onMounted(load)
   position: relative;
 }
 
-.rail::before {
-  content: '';
+.trunk {
   position: absolute;
-  left: 50%;
+  left: var(--lane-a);
   top: 0;
   bottom: 0;
   width: 2px;
-  margin-left: -1px;
-  background: var(--color-bg-tertiary);
-  transform-origin: top;
-  animation: rail-draw 0.5s ease backwards;
-  animation-delay: var(--stagger);
+  background: repeating-linear-gradient(to bottom, var(--rail-tick) 0 3px, transparent 3px 7px);
 }
 
-@keyframes rail-draw {
+.node {
+  position: absolute;
+  left: calc(var(--lane-a) + 1px);
+  top: var(--base-y);
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding-top: 4px;
+  padding-bottom: 74px;
+}
+
+.bar {
+  height: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-secondary);
+  animation: breathe 1.8s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 140ms);
+}
+
+.w-short {
+  width: 26%;
+}
+
+.w-long {
+  width: 62%;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes draw-down {
   from {
     transform: scaleY(0);
   }
 }
 
-.log li:first-child .rail::before {
-  top: var(--node-y);
-}
-
-.node {
-  position: absolute;
-  left: 50%;
-  top: var(--node-y);
-  transform: translate(-50%, -50%);
-  width: 11px;
-  height: 11px;
-  border-radius: var(--radius-full);
-  transition: all var(--transition-fast);
-  animation: node-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-  animation-delay: calc(var(--stagger) + 160ms);
-}
-
-@keyframes node-pop {
-  from {
-    transform: translate(-50%, -50%) scale(0);
-  }
-}
-
-.is-ready .node {
-  background: var(--color-success);
-}
-
-.is-draft .node {
-  background: var(--color-bg-primary);
-  border: 2px solid var(--color-text-muted);
-}
-
-.entry:hover .node {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.entry-link {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) var(--spacing-sm);
-  text-decoration: none;
-  border-radius: var(--radius-md);
-  transition: background var(--transition-fast);
-}
-
-.entry-link:hover {
-  background: var(--color-bg-secondary);
-}
-
-.pull-title {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
-  padding-right: var(--spacing-xl);
-  font-size: var(--font-size-base);
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.is-draft .pull-title-text {
-  color: var(--color-text-secondary);
-}
-
-.pull-badge {
-  padding: 0 var(--spacing-sm);
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  border: 1px dashed var(--color-text-muted);
-  border-radius: var(--radius-full);
-}
-
-.pull-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--spacing-xs);
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-}
-
-.pull-repo {
-  color: var(--color-link);
-  font-weight: 600;
-}
-
-.pull-avatar {
-  width: 16px;
-  height: 16px;
-  border-radius: var(--radius-full);
-}
-
-.pull-stats {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--spacing-md);
-  margin-top: 2px;
-}
-
-.stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-}
-
-.diffstat {
-  gap: var(--spacing-xs);
-  font-weight: 600;
-}
-
-.diffstat .add {
-  color: var(--color-success);
-}
-
-.diffstat .del {
-  color: var(--color-danger);
-}
-
-.diffbar {
-  display: inline-flex;
-  gap: 2px;
-  margin-left: var(--spacing-xs);
-}
-
-.diffcell {
-  width: 7px;
-  height: 7px;
-  border-radius: 1px;
-  background: var(--color-bg-tertiary);
-  animation: cell-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-  animation-delay: calc(var(--stagger) + 260ms + var(--j, 0) * 45ms);
-}
-
-@keyframes cell-pop {
-  from {
-    transform: scale(0);
-  }
-}
-
-.diffcell.add {
-  background: var(--color-success);
-}
-
-.diffcell.del {
+.fail .node {
   background: var(--color-danger);
 }
 
-.pull-external {
-  position: absolute;
-  top: var(--spacing-md);
-  right: var(--spacing-md);
+.fail-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding-bottom: var(--spacing-xl);
+  font-family: var(--font-family-mono);
+}
+
+.fatal {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+}
+
+.fatal .kw {
+  font-weight: 700;
+}
+
+.note-text {
+  margin: 0;
+  padding-bottom: var(--spacing-xl);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
   color: var(--color-text-muted);
-  transition: color var(--transition-fast);
 }
 
-.entry-link:hover .pull-external {
-  color: var(--color-accent);
+.head .trunk {
+  bottom: auto;
+  height: var(--base-y);
 }
 
-.trunk {
-  --node-y: 18px;
-  min-height: 36px;
-}
-
-.trunk .rail::before {
-  bottom: calc(100% - var(--node-y));
-}
-
-.trunk-node {
+.head .node {
+  width: 13px;
+  height: 13px;
   background: var(--color-accent);
-  box-shadow: var(--shadow-glow);
+  box-shadow:
+    0 0 0 4px rgba(255, 204, 0, 0.14),
+    var(--shadow-glow);
+  animation: head-land 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: calc(var(--trail) + 260ms);
 }
 
-.trunk-label {
-  align-self: center;
-  padding-left: var(--spacing-sm);
+@keyframes head-land {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+    box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.6);
+    box-shadow: 0 0 0 14px rgba(255, 204, 0, 0.22);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow:
+      0 0 0 4px rgba(255, 204, 0, 0.14),
+      var(--shadow-glow);
+  }
+}
+
+.head-label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  margin: 0;
+  line-height: 1.7;
   font-family: var(--font-family-mono);
   font-size: var(--font-size-xs);
-  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.ref {
+  color: var(--color-accent);
+  letter-spacing: 0.04em;
+}
+
+.tag {
+  padding: 0 var(--spacing-sm);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-full);
+  color: var(--color-accent);
+  letter-spacing: 0.08em;
+}
+
+.fill {
+  flex: 1;
+  min-width: var(--spacing-md);
+  height: 0;
+  border-bottom: 1px dotted currentcolor;
+  opacity: 0.4;
+  transform: translateY(-3px);
+}
+
+.when {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin: var(--spacing-xl) 0 0;
+  padding-left: var(--rail-w);
+}
+
+.foot-note {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.cmd-btn {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cmd-btn .p {
   color: var(--color-accent);
 }
 
-@media (max-width: 768px) {
+.cmd-btn:hover:not(:disabled) {
+  color: var(--color-text-primary);
+  border-color: var(--color-accent);
+}
+
+.cmd-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+@media (max-width: 720px) {
   .pulls {
     padding: var(--spacing-lg);
   }
 
-  .pull-stats {
-    gap: var(--spacing-sm);
+  .pulls-container {
+    --rail-w: 46px;
+    --lane-b: 32px;
+    --curve: 10px;
+  }
+
+  .foot {
+    padding-left: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .entry,
-  .trunk,
-  .rail::before,
-  .node,
-  .diffcell {
-    animation: none;
-  }
-
-  .spin {
+  .row .trunk,
+  .row .node,
+  .head .node,
+  .bars,
+  .fail-body,
+  .note-text,
+  .head-label,
+  .bar,
+  .pulls.cmd-clearing .row .node,
+  .pulls.cmd-clearing .head .node,
+  .pulls.cmd-clearing .bars,
+  .pulls.cmd-clearing .fail-body,
+  .pulls.cmd-clearing .note-text,
+  .pulls.cmd-clearing .head-label,
+  .pulls.cmd-clearing :deep(.tip),
+  .pulls.cmd-clearing :deep(.fork),
+  .pulls.cmd-clearing :deep(.trunk),
+  .pulls.cmd-clearing :deep(.base),
+  .pulls.cmd-clearing :deep(.body) {
     animation: none;
   }
 }

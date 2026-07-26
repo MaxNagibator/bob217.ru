@@ -1,4 +1,6 @@
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
+import { langColor, loadRepos } from '@/composables/useForkMap'
+import { plural } from '@/utils/format'
 
 export interface PullRequest {
   id: number
@@ -23,9 +25,17 @@ export interface PullRequest {
 
 export interface PullStats {
   total: number
-  ready: number
   draft: number
   repos: number
+}
+
+export interface PullRow {
+  pr: PullRequest
+  days: number
+  age: string
+  lang: string
+  color: string
+  gap: number
 }
 
 interface SearchItem {
@@ -54,25 +64,85 @@ interface PullDetail {
   changed_files: number
 }
 
+interface CachedDetail {
+  updated: string
+  detail: PullDetail
+}
+
 const ENDPOINT =
   'https://api.github.com/search/issues?q=is:pr+is:open+user:MaxNagibator&per_page=100&sort=updated'
 
 const HEADERS = { Accept: 'application/vnd.github+json' }
 
+const DETAILS_KEY = 'pull-details'
+const DETAILS_TTL = 30 * 60 * 1000
+
+const DAY_MS = 86_400_000
+const GAP_MIN = 26
+const GAP_MAX = 118
+const GAP_STEP = 22
+
+const PENDING_COLOR = 'var(--color-text-muted)'
+
 const repoFrom = (url: string): string => url.slice(url.lastIndexOf('/') + 1)
+
+const detailKey = (pr: PullRequest): string => `${pr.repo}#${pr.number}`
+
+const readDetails = (): Record<string, CachedDetail> => {
+  try {
+    const raw = localStorage.getItem(DETAILS_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as { ts: number; data: Record<string, CachedDetail> }
+    return Date.now() - parsed.ts < DETAILS_TTL ? parsed.data : {}
+  } catch {
+    return {}
+  }
+}
+
+const writeDetails = (data: Record<string, CachedDetail>): void => {
+  try {
+    localStorage.setItem(DETAILS_KEY, JSON.stringify({ ts: Date.now(), data }))
+  } catch {
+    return
+  }
+}
+
+const applyDetail = (pr: PullRequest, d: PullDetail): void => {
+  pr.commits = d.commits
+  pr.additions = d.additions
+  pr.deletions = d.deletions
+  pr.changedFiles = d.changed_files
+}
+
+const daysBetween = (from: number, to: number): number =>
+  Math.max(0, Math.round((to - from) / DAY_MS))
+
+const ageLabel = (days: number): string =>
+  days === 0 ? 'сегодня' : `${days} ${plural(days, 'день', 'дня', 'дней')}`
+
+const gapPx = (days: number): number =>
+  Math.round(Math.min(GAP_MAX, Math.max(GAP_MIN, GAP_STEP * Math.log2(1 + days))))
 
 export function usePullRequests() {
   const pulls = ref<PullRequest[]>([])
+  const langs = shallowRef<ReadonlyMap<string, string>>(new Map())
   const total = ref(0)
   const loading = ref(false)
+  const loaded = ref(false)
   const error = ref<string | null>(null)
+
+  const loadLangs = async (): Promise<void> => {
+    const list = await loadRepos().catch(() => null)
+    if (list) langs.value = new Map(list.map((r) => [r.name.toLowerCase(), r.lang]))
+  }
 
   const load = async (): Promise<void> => {
     loading.value = true
     error.value = null
     try {
       const res = await fetch(ENDPOINT, { headers: HEADERS })
-      if (!res.ok) throw new Error(`GitHub ${res.status}`)
+      if (!res.ok)
+        throw new Error(res.status === 403 ? 'лимит GitHub исчерпан' : `GitHub ${res.status}`)
       const data = (await res.json()) as SearchResponse
       total.value = data.total_count
       pulls.value = data.items.map((it) => ({
@@ -95,31 +165,65 @@ export function usePullRequests() {
         deletions: null,
         changedFiles: null,
       }))
-      void Promise.all(pulls.value.map(enrich))
+      void loadLangs()
+      void enrich()
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Не удалось загрузить'
+      error.value = e instanceof Error ? e.message : 'не удалось загрузить'
     } finally {
       loading.value = false
+      loaded.value = true
     }
   }
 
-  const enrich = async (pr: PullRequest): Promise<void> => {
-    const res = await fetch(pr.apiUrl, { headers: HEADERS }).catch(() => null)
-    if (!res || !res.ok) return
-    const d = (await res.json().catch(() => null)) as PullDetail | null
-    if (!d) return
-    pr.commits = d.commits
-    pr.additions = d.additions
-    pr.deletions = d.deletions
-    pr.changedFiles = d.changed_files
+  const enrich = async (): Promise<void> => {
+    const cache = readDetails()
+    const misses: PullRequest[] = []
+    for (const pr of pulls.value) {
+      const hit = cache[detailKey(pr)]
+      if (hit && hit.updated === pr.updatedAt) applyDetail(pr, hit.detail)
+      else misses.push(pr)
+    }
+    if (!misses.length) return
+
+    let fetched = false
+    await Promise.all(
+      misses.map(async (pr) => {
+        const res = await fetch(pr.apiUrl, { headers: HEADERS }).catch(() => null)
+        if (!res || !res.ok) return
+        const d = (await res.json().catch(() => null)) as PullDetail | null
+        if (!d) return
+        applyDetail(pr, d)
+        cache[detailKey(pr)] = { updated: pr.updatedAt, detail: d }
+        fetched = true
+      }),
+    )
+    if (fetched) writeDetails(cache)
   }
 
   const stats = computed<PullStats>(() => ({
     total: pulls.value.length,
-    ready: pulls.value.filter((p) => !p.draft).length,
     draft: pulls.value.filter((p) => p.draft).length,
     repos: new Set(pulls.value.map((p) => p.repo)).size,
   }))
 
-  return { pulls, total, stats, loading, error, load }
+  const rows = computed<PullRow[]>(() => {
+    const now = Date.now()
+    const sorted = [...pulls.value].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    const at = sorted.map((pr) => new Date(pr.createdAt).getTime())
+    return sorted.map((pr, i) => {
+      const lang = langs.value.get(pr.repo.toLowerCase()) ?? ''
+      const born = at[i] ?? now
+      const days = daysBetween(born, now)
+      return {
+        pr,
+        days,
+        age: ageLabel(days),
+        lang,
+        color: lang ? langColor(lang) : PENDING_COLOR,
+        gap: gapPx(daysBetween(born, at[i + 1] ?? now)),
+      }
+    })
+  })
+
+  return { rows, total, stats, loading, loaded, error, load }
 }
