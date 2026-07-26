@@ -117,25 +117,6 @@ const { phaseClass, start, print } = useCmdReplay(() => 240 + sectionCount.value
   color: var(--color-accent);
 }
 
-.home.cmd-printing .cmd-out {
-  animation-name: home-print;
-  animation-duration: 0.4s;
-  animation-timing-function: steps(18, end);
-}
-
-@keyframes home-print {
-  from {
-    opacity: 1;
-    clip-path: inset(0 100% 0 0);
-    filter: brightness(1.8);
-  }
-  to {
-    opacity: 1;
-    clip-path: inset(0 0 0 0);
-    filter: brightness(1);
-  }
-}
-
 @media (max-width: 768px) {
   .home {
     padding: 0 var(--spacing-md);
