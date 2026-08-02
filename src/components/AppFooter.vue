@@ -23,7 +23,10 @@ const navLinks = [
   { to: '/donate', label: 'Донат' },
   { to: '/resume', label: 'Резюме' },
   { to: '/about', label: 'О нас' },
+  { to: '/log', label: 'Лента' },
   { to: '/pulls', label: 'PR' },
+  { to: '/issues', label: 'Задачи' },
+  { to: '/repos', label: 'Карта' },
   { to: '/tarkov', label: 'Тарков' },
 ] as const
 

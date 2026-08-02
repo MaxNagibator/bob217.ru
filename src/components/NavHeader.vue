@@ -9,6 +9,8 @@ import {
   PiggyBank,
   Clock,
   GitPullRequest,
+  GitCommitHorizontal,
+  CircleDot,
   Network,
   type LucideIcon,
 } from 'lucide-vue-next'
@@ -29,7 +31,9 @@ const navLinks: NavLink[] = [
   { to: '/donate', label: 'Донат', icon: Heart },
   { to: '/resume', label: 'Резюме', icon: FileText },
   { to: '/about', label: 'О нас', icon: Info },
+  { to: '/log', label: 'Лента', icon: GitCommitHorizontal },
   { to: '/pulls', label: 'PR', icon: GitPullRequest },
+  { to: '/issues', label: 'Задачи', icon: CircleDot },
   { to: '/repos', label: 'Карта', icon: Network },
   { to: '/tarkov', label: 'Тарков', icon: Clock },
 ]
@@ -192,7 +196,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-sm);
+  white-space: nowrap;
   text-decoration: none;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);

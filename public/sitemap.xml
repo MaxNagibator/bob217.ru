@@ -17,7 +17,15 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://bob217.ru/log</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://bob217.ru/pulls</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://bob217.ru/issues</loc>
     <priority>0.6</priority>
   </url>
   <url>

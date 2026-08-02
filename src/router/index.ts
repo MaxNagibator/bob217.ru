@@ -63,6 +63,26 @@ const router = createRouter({
       },
     },
     {
+      path: '/log',
+      name: 'log',
+      component: () => import('../views/LogView.vue'),
+      meta: {
+        title: 'Лента коммитов – bob217',
+        description:
+          'Лента коммитов по репозиториям bob217 как git log --graph: что и когда менялось в каждом проекте.',
+      },
+    },
+    {
+      path: '/issues',
+      name: 'issues',
+      component: () => import('../views/IssuesView.vue'),
+      meta: {
+        title: 'Открытые задачи – bob217',
+        description:
+          'Открытые issue по репозиториям bob217: что ждёт работы, где идёт обсуждение и сколько задача висит.',
+      },
+    },
+    {
       path: '/repos',
       name: 'repos',
       component: () => import('../views/RepoMapView.vue'),
