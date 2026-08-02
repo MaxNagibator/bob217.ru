@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import { applyRouteMeta, SITE_DESCRIPTION, SITE_TITLE } from '@/utils/meta'
+import { pageScroll } from '@/utils/scroll'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -12,6 +13,7 @@ declare module 'vue-router' {
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior: pageScroll,
   routes: [
     {
       path: '/',
