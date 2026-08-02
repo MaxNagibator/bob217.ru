@@ -6,6 +6,12 @@ export interface Contributor {
   last: string
 }
 
+export interface MergedPull {
+  login: string
+  repo: string
+  at: string
+}
+
 export interface Repo {
   name: string
   stars: number
@@ -169,6 +175,9 @@ const COMMITS_KEY = 'repo-map-commits'
 const COMMITS_TTL = 24 * 60 * 60 * 1000
 const REPOS_KEY = 'repo-map-list'
 const REPOS_TTL = 30 * 60 * 1000
+const MERGED_KEY = 'merged-pulls'
+const MERGED_TTL = 30 * 60 * 1000
+const MERGED_PAGES = 5
 const COMMITS_LANES = 5
 
 export type CommitsState = 'idle' | 'loading' | 'ready' | 'partial'
@@ -258,29 +267,74 @@ const toRepo = (r: RepoResponse, contributors: Contributor[], commits: number | 
 export const loadRepos = async (): Promise<Repo[]> =>
   (await fetchRepoList()).map((r) => toRepo(r, [], null))
 
+const readMergedCache = (): MergedPull[] | null => {
+  try {
+    const raw = localStorage.getItem(MERGED_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { ts: number; data: MergedPull[] }
+    return Date.now() - parsed.ts < MERGED_TTL ? parsed.data : null
+  } catch {
+    return null
+  }
+}
+
+const writeMergedCache = (list: MergedPull[]): void => {
+  try {
+    localStorage.setItem(MERGED_KEY, JSON.stringify({ ts: Date.now(), data: list }))
+  } catch {
+    return
+  }
+}
+
+let mergedPromise: Promise<MergedPull[]> | null = null
+let mergedAt = 0
+
+export const loadMergedPulls = (onPage?: (found: number) => void): Promise<MergedPull[]> => {
+  if (mergedPromise && Date.now() - mergedAt >= MERGED_TTL) mergedPromise = null
+  if (!mergedPromise) {
+    mergedAt = Date.now()
+    mergedPromise = (async () => {
+      const cached = readMergedCache()
+      if (cached) return cached
+      const all: MergedPull[] = []
+      for (let page = 1; page <= MERGED_PAGES; page++) {
+        const data = await fetchJson<SearchResponse>(mergedUrl(page))
+        for (const it of data.items) {
+          all.push({
+            login: it.user.login,
+            repo: repoName(it.repository_url),
+            at: it.pull_request?.merged_at ?? it.closed_at ?? '',
+          })
+        }
+        onPage?.(all.length)
+        if (data.items.length < 100) break
+      }
+      writeMergedCache(all)
+      return all
+    })().catch((e: unknown) => {
+      mergedPromise = null
+      throw e
+    })
+  }
+  return mergedPromise
+}
+
 const loadContributors = async (
   onPage: (found: number) => void,
 ): Promise<Map<string, Contributor[]>> => {
   const byRepo = new Map<string, Map<string, Contributor>>()
   let found = 0
-  for (let page = 1; page <= 5; page++) {
-    const data = await fetchJson<SearchResponse>(mergedUrl(page))
-    for (const it of data.items) {
-      const login = it.user.login
-      if (login === OWNER) continue
-      const repo = repoName(it.repository_url)
-      const at = it.pull_request?.merged_at ?? it.closed_at ?? ''
-      const people = byRepo.get(repo) ?? new Map<string, Contributor>()
-      const c = people.get(login) ?? { login, merged: 0, last: '' }
-      c.merged++
-      if (at > c.last) c.last = at
-      people.set(login, c)
-      byRepo.set(repo, people)
-      found++
-    }
-    onPage(found)
-    if (data.items.length < 100) break
+  for (const { login, repo, at } of await loadMergedPulls(onPage)) {
+    if (login === OWNER) continue
+    const people = byRepo.get(repo) ?? new Map<string, Contributor>()
+    const c = people.get(login) ?? { login, merged: 0, last: '' }
+    c.merged++
+    if (at > c.last) c.last = at
+    people.set(login, c)
+    byRepo.set(repo, people)
+    found++
   }
+  onPage(found)
   return new Map(
     [...byRepo].map(([repo, people]) => [
       repo,

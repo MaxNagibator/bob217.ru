@@ -9,6 +9,16 @@ export const plural = (n: number, one: string, few: string, many: string): strin
 export const fmtSize = (kb: number): string =>
   kb >= 1024 ? `${(kb / 1024).toFixed(1)} МБ` : `${kb} КБ`
 
+const DAY_MS = 86_400_000
+
+export const ago = (iso: string): string => {
+  if (!iso) return 'когда-то'
+  const days = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / DAY_MS))
+  if (days === 0) return 'сегодня'
+  if (days === 1) return 'вчера'
+  return `${days} ${plural(days, 'день', 'дня', 'дней')} назад`
+}
+
 export const fmtDate = (iso: string): string =>
   iso
     ? new Date(iso)
