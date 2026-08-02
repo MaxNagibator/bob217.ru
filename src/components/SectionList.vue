@@ -1,35 +1,21 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import CmdLine from '@/components/CmdLine.vue'
+import { SECTION_PAGES } from '@/site/pages'
 import { plural } from '@/utils/format'
-
-interface SiteSection {
-  to: string
-  dir: string
-  desc: string
-}
 
 const props = defineProps<{
   repoCount: number
 }>()
 
-const SECTIONS: SiteSection[] = [
-  { to: '/log', dir: 'log/', desc: 'лента коммитов по всем репозиториям' },
-  { to: '/issues', dir: 'issues/', desc: 'что ждёт работы' },
-  { to: '/pulls', dir: 'pulls/', desc: 'что сейчас на ревью' },
-  { to: '/repos', dir: 'repos/', desc: 'карта репозиториев' },
-  { to: '/resume', dir: 'resume/', desc: 'опыт и стек как вывод git reflog' },
-  { to: '/about', dir: 'about/', desc: 'кто пишет код – git shortlog' },
-  { to: '/donate', dir: 'donate/', desc: 'поддержать проекты' },
-  { to: '/tarkov', dir: 'tarkov/', desc: 'игровое время и таймеры крафтов' },
-]
-
-const noteOf = (to: string): string =>
-  to === '/repos' && props.repoCount
+const noteOf = (path: string): string =>
+  path === '/repos' && props.repoCount
     ? `${props.repoCount} ${plural(props.repoCount, 'проект', 'проекта', 'проектов')}`
     : ''
 
-const rows = computed(() => SECTIONS.map((section) => ({ ...section, note: noteOf(section.to) })))
+const rows = computed(() =>
+  SECTION_PAGES.map((section) => ({ ...section, note: noteOf(section.path) })),
+)
 </script>
 
 <template>
@@ -38,10 +24,10 @@ const rows = computed(() => SECTIONS.map((section) => ({ ...section, note: noteO
     <h2 class="md-head"><span class="hash">##</span> Разделы</h2>
 
     <ul class="list">
-      <li v-for="(row, i) in rows" :key="row.to">
-        <RouterLink class="row" :to="row.to" :style="{ '--i': i }">
+      <li v-for="(row, i) in rows" :key="row.path">
+        <RouterLink class="row" :to="row.path" :style="{ '--i': i }">
           <span class="dir">{{ row.dir }}</span>
-          <span class="desc">{{ row.desc }}</span>
+          <span class="desc">{{ row.summary }}</span>
           <span v-if="row.note" class="note">{{ row.note }}</span>
         </RouterLink>
       </li>

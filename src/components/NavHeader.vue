@@ -14,29 +14,26 @@ import {
   Network,
   type LucideIcon,
 } from 'lucide-vue-next'
-
-interface NavLink {
-  to: string
-  label: string
-  icon: LucideIcon
-}
+import { NAV_PAGES, type NavPageName } from '@/site/pages'
 
 const route = useRoute()
 const isMenuOpen = ref(false)
 const isScrolled = ref(false)
 const toggleButton = ref<HTMLButtonElement | null>(null)
 
-const navLinks: NavLink[] = [
-  { to: '/', label: 'Главная', icon: Home },
-  { to: '/donate', label: 'Донат', icon: Heart },
-  { to: '/resume', label: 'Резюме', icon: FileText },
-  { to: '/about', label: 'О нас', icon: Info },
-  { to: '/log', label: 'Лента', icon: GitCommitHorizontal },
-  { to: '/pulls', label: 'PR', icon: GitPullRequest },
-  { to: '/issues', label: 'Задачи', icon: CircleDot },
-  { to: '/repos', label: 'Карта', icon: Network },
-  { to: '/tarkov', label: 'Тарков', icon: Clock },
-]
+const NAV_ICONS: Record<NavPageName, LucideIcon> = {
+  home: Home,
+  donate: Heart,
+  resume: FileText,
+  about: Info,
+  log: GitCommitHorizontal,
+  pulls: GitPullRequest,
+  issues: CircleDot,
+  repos: Network,
+  tarkov: Clock,
+}
+
+const navLinks = NAV_PAGES.map((page) => ({ ...page, icon: NAV_ICONS[page.name] }))
 
 const toggleMenu = (): void => {
   isMenuOpen.value = !isMenuOpen.value
@@ -100,9 +97,9 @@ onBeforeUnmount(() => {
       <div id="nav-menu" :class="['nav-menu', { open: isMenuOpen }]">
         <RouterLink
           v-for="link in navLinks"
-          :key="link.to"
-          :to="link.to"
-          :class="['nav-link', { active: isActive(link.to) }]"
+          :key="link.path"
+          :to="link.path"
+          :class="['nav-link', { active: isActive(link.path) }]"
           @click="closeMenu"
         >
           <component :is="link.icon" class="nav-icon" :size="18" />
