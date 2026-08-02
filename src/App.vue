@@ -7,9 +7,10 @@ import ScrollToTop from '@/components/ScrollToTop.vue'
 
 <template>
   <div class="app-layout">
+    <a class="skip-link" href="#main">к содержимому</a>
     <NavHeader />
 
-    <main class="main-content">
+    <main id="main" class="main-content">
       <RouterView v-slot="{ Component }">
         <Transition name="page" mode="out-in">
           <component :is="Component" />
@@ -32,6 +33,24 @@ import ScrollToTop from '@/components/ScrollToTop.vue'
 .main-content {
   flex: 1;
   padding-top: var(--nav-height);
+}
+
+.skip-link {
+  position: absolute;
+  top: var(--spacing-sm);
+  left: var(--spacing-sm);
+  z-index: var(--z-modal);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-bg-primary);
+  background: var(--color-accent);
+  border-radius: var(--radius-sm);
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  transform: none;
 }
 
 .page-enter-active,
