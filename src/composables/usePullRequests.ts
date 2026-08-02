@@ -1,6 +1,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import { langColor, loadRepos, OWNER } from '@/composables/useForkMap'
 import { readCache, writeCache } from '@/utils/cache'
+import { fetchGitHub, githubResponse } from '@/utils/github'
 import { plural } from '@/utils/format'
 
 export interface PullRequest {
@@ -74,8 +75,6 @@ const ENDPOINT =
   `https://api.github.com/search/issues?q=is:pr+is:open+user:${OWNER}` +
   '&per_page=100&sort=updated'
 
-const HEADERS = { Accept: 'application/vnd.github+json' }
-
 const DETAILS_KEY = 'pull-details'
 const DETAILS_TTL = 30 * 60 * 1000
 
@@ -126,10 +125,7 @@ export function usePullRequests() {
     loading.value = true
     error.value = null
     try {
-      const res = await fetch(ENDPOINT, { headers: HEADERS })
-      if (!res.ok)
-        throw new Error(res.status === 403 ? 'лимит GitHub исчерпан' : `GitHub ${res.status}`)
-      const data = (await res.json()) as SearchResponse
+      const data = await fetchGitHub<SearchResponse>(ENDPOINT)
       total.value = data.total_count
       pulls.value = data.items.map((it) => ({
         id: it.id,
@@ -174,8 +170,8 @@ export function usePullRequests() {
     let fetched = false
     await Promise.all(
       misses.map(async (pr) => {
-        const res = await fetch(pr.apiUrl, { headers: HEADERS }).catch(() => null)
-        if (!res || !res.ok) return
+        const res = await githubResponse(pr.apiUrl)
+        if (!res?.ok) return
         const d = (await res.json().catch(() => null)) as PullDetail | null
         if (!d) return
         applyDetail(pr, d)

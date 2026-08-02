@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { readCache, writeCache } from '@/utils/cache'
+import { fetchGitHub, githubResponse } from '@/utils/github'
 
 export interface Contributor {
   login: string
@@ -165,7 +166,6 @@ interface SearchResponse {
   items: SearchItem[]
 }
 
-const HEADERS = { Accept: 'application/vnd.github+json' }
 const REPOS_URL = `https://api.github.com/users/${OWNER}/repos?per_page=100&sort=updated`
 const mergedUrl = (page: number): string =>
   `https://api.github.com/search/issues?q=is:pr+is:merged+user:${OWNER}&per_page=100&page=${page}`
@@ -188,13 +188,6 @@ export type LoadStage = 'idle' | 'repos' | 'pulls' | 'ready' | 'error'
 const domainLabel = (key: string): string => DOMAINS.find((d) => d.key === key)?.label ?? 'прочее'
 
 const repoName = (apiUrl: string): string => apiUrl.slice(apiUrl.lastIndexOf('/') + 1)
-
-const fetchJson = async <T>(url: string): Promise<T> => {
-  const res = await fetch(url, { headers: HEADERS })
-  if (!res.ok)
-    throw new Error(res.status === 403 ? 'Лимит GitHub исчерпан' : `GitHub ${res.status}`)
-  return (await res.json()) as T
-}
 
 let repoListPromise: Promise<RepoResponse[]> | null = null
 let repoListAt = 0
@@ -222,7 +215,7 @@ const fetchRepoList = (): Promise<RepoResponse[]> => {
     repoListPromise = (async () => {
       const cached = readCache<RepoResponse[]>(REPOS_KEY, REPOS_TTL)
       if (cached) return cached
-      const list = await fetchJson<RepoResponse[]>(REPOS_URL)
+      const list = await fetchGitHub<RepoResponse[]>(REPOS_URL)
       writeReposCache(list)
       return list
     })().catch((e: unknown) => {
@@ -267,7 +260,7 @@ export const loadMergedPulls = (onPage?: (found: number) => void): Promise<Merge
       if (cached) return cached
       const all: MergedPull[] = []
       for (let page = 1; page <= MERGED_PAGES; page++) {
-        const data = await fetchJson<SearchResponse>(mergedUrl(page))
+        const data = await fetchGitHub<SearchResponse>(mergedUrl(page))
         for (const it of data.items) {
           all.push({
             login: it.user.login,
@@ -321,8 +314,8 @@ const lastPage = (link: string | null): number | null => {
 }
 
 const commitCount = async (name: string): Promise<number | null> => {
-  const res = await fetch(commitsUrl(name), { headers: HEADERS }).catch(() => null)
-  if (!res || !res.ok) return null
+  const res = await githubResponse(commitsUrl(name))
+  if (!res?.ok) return null
   const page = lastPage(res.headers.get('Link'))
   if (page !== null) return page
   const data = (await res.json().catch(() => null)) as unknown[] | null

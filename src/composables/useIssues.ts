@@ -1,6 +1,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import { langColor, loadRepos, OWNER } from '@/composables/useForkMap'
 import { readCache, writeCache } from '@/utils/cache'
+import { fetchGitHub } from '@/utils/github'
 import { plural } from '@/utils/format'
 
 export interface Issue {
@@ -67,8 +68,6 @@ interface SearchResponse {
   total_count: number
   items: SearchItem[]
 }
-
-const HEADERS = { Accept: 'application/vnd.github+json' }
 
 const ENDPOINT =
   `https://api.github.com/search/issues?q=is:issue+is:open+user:${OWNER}` +
@@ -141,10 +140,7 @@ export function useIssues() {
         total.value = cached.total
         issues.value = cached.items
       } else {
-        const res = await fetch(ENDPOINT, { headers: HEADERS })
-        if (!res.ok)
-          throw new Error(res.status === 403 ? 'лимит GitHub исчерпан' : `GitHub ${res.status}`)
-        const data = (await res.json()) as SearchResponse
+        const data = await fetchGitHub<SearchResponse>(ENDPOINT)
         total.value = data.total_count
         issues.value = data.items.map(toIssue)
         writeCache<Cache>(CACHE_KEY, { total: total.value, items: issues.value })

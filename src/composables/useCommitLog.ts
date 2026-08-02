@@ -1,6 +1,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import { langColor, loadRepos, OWNER } from '@/composables/useForkMap'
 import { readCache, writeCache } from '@/utils/cache'
+import { fetchGitHub } from '@/utils/github'
 import { fmtDate } from '@/utils/format'
 
 export interface Commit {
@@ -75,7 +76,6 @@ interface Span {
   lane: number
 }
 
-const HEADERS = { Accept: 'application/vnd.github+json' }
 const PER_PAGE = 100
 const MAX_PAGES = 5
 
@@ -161,10 +161,7 @@ export function useCommitLog() {
         total.value = cache.total
         commits.value = next === 1 ? hit : [...commits.value, ...hit]
       } else {
-        const res = await fetch(pageUrl(next), { headers: HEADERS })
-        if (!res.ok)
-          throw new Error(res.status === 403 ? 'лимит GitHub исчерпан' : `GitHub ${res.status}`)
-        const data = (await res.json()) as SearchResponse
+        const data = await fetchGitHub<SearchResponse>(pageUrl(next))
         total.value = data.total_count
         const fresh = data.items.map(toCommit)
         commits.value = next === 1 ? fresh : [...commits.value, ...fresh]
