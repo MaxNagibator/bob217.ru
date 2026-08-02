@@ -1,3 +1,13 @@
+import '@fontsource/roboto/latin-400.css'
+import '@fontsource/roboto/latin-500.css'
+import '@fontsource/roboto/cyrillic-400.css'
+import '@fontsource/roboto/cyrillic-500.css'
+import '@fontsource/roboto-mono/latin-400.css'
+import '@fontsource/roboto-mono/cyrillic-400.css'
+import '@fontsource/poppins/latin-400.css'
+import '@fontsource/poppins/latin-600.css'
+import '@fontsource/poppins/latin-700.css'
+
 import './styles/variables.css'
 import './styles/global.css'
 

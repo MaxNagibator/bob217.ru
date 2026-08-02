@@ -2,7 +2,7 @@
   "Проекты": [
     {
       "title": "MediaOrcestrator",
-      "icon": "/img/mediaorcestrator.png",
+      "icon": "/img/mediaorcestrator.webp",
       "short_description": "Заливает видосы на все площадки за тебя",
       "description": [
         "Заливаешь видосы на 5 площадок руками? Серьёзно? В 2026?",
@@ -26,7 +26,7 @@
     },
     {
       "title": "Филочки",
-      "icon": "/img/money.png",
+      "icon": "/img/money.webp",
       "short_description": "Личный финансовый помощник",
       "description": [
         "Завел очередную любовницу, но не знаешь, сколько на неё тратишь? Каждый вечер в ресторане, подарки на праздники — всё это складывается в круглую сумму, а ты даже не ведёшь учёт.",
@@ -41,7 +41,7 @@
     },
     {
       "title": "Копатель",
-      "icon": "/img/digger.png",
+      "icon": "/img/digger.webp",
       "short_description": "Погрузись в жестокий мир копания",
       "description": [
         "Погрузись в жестокий мир проекта «Копатель»!",
@@ -53,7 +53,7 @@
     },
     {
       "title": "Шахматишки",
-      "icon": "/img/chess.png",
+      "icon": "/img/chess.webp",
       "short_description": "Стратегическая игра в шахматы",
       "description": [
         "Проверь свои стратегические навыки только с проектом «Шахматишки»!",
@@ -68,7 +68,7 @@
     },
     {
       "title": "Загрузчик с ютуба",
-      "icon": "/img/ytdownloader.png",
+      "icon": "/img/ytdownloader.webp",
       "short_description": "Скачивай видео и аудио с YouTube",
       "description": [
         "Устали от постоянного поиска и загрузки видео?",
@@ -80,7 +80,7 @@
     },
     {
       "title": "Домики",
-      "icon": "/img/domiki.png",
+      "icon": "/img/domiki.webp",
       "short_description": "Градостроительный симулятор",
       "description": [
         "Почувствуй себя настоящим творцом мира с проектом «Домики»!",
@@ -92,7 +92,7 @@
     },
     {
       "title": "Дурач☻к",
-      "icon": "/img/durak.png",
+      "icon": "/img/durak.webp",
       "short_description": "Карточная игра в дурака",
       "description": [
         "Устал от изобилия раскрученных донатных помоек?",
@@ -106,7 +106,7 @@
     },
     {
       "title": "Лабиринтик",
-      "icon": "/img/maze.png",
+      "icon": "/img/maze.webp",
       "short_description": "Увлекательный лабиринт",
       "description": [
         "Настоящий прорыв в области тайм-киллеров — проект «Лабиринтик»!",
@@ -118,7 +118,7 @@
     },
     {
       "title": "SpaceSnoop",
-      "icon": "/img/space-snoop.jpg",
+      "icon": "/img/space-snoop.webp",
       "short_description": "Исследование файловой системы",
       "description": [
         "Исследуй бескрайние просторы своих накопителей с проектом «Пространственный Шнырь»!",
@@ -130,21 +130,21 @@
     },
     {
       "title": "Элементарно!",
-      "icon": "/img/ruletka.png",
+      "icon": "/img/ruletka.webp",
       "short_description": "Игра викторина, играй с друзьями",
       "description": ["Игра викторина, играй с друзьями!"],
       "link": "https://github.com/MaxNagibator/ElementaryGame"
     },
     {
       "title": "Помогатор!",
-      "icon": "/img/pomogator_bot.png",
+      "icon": "/img/pomogator_bot.webp",
       "short_description": "Подписывайся на уведомления о трансляциях",
       "description": ["Наш бот помогатор для телеги!"],
       "link": "https://github.com/MaxNagibator/PomogatorBot"
     },
     {
       "title": "Попрошайка бот для твича!",
-      "icon": "/img/PoproshaykaBot.png",
+      "icon": "/img/PoproshaykaBot.webp",
       "short_description": "Попрошайка бот",
       "description": ["Наш бот помогатор для твича!"],
       "link": "https://github.com/MaxNagibator/PoproshaykaBot"
@@ -160,7 +160,7 @@
     },
     {
       "title": "Стримим тут",
-      "icon": "/img/bobito.jpg",
+      "icon": "/img/bobito.webp",
       "short_description": "Живые стримы на Twitch",
       "description": ["Смотри живые стримы на Twitch и будь в курсе всех событий."],
       "link": "https://www.twitch.tv/bobito217"
@@ -192,7 +192,7 @@
     },
     {
       "title": "SpaceSnoop",
-      "icon": "/img/space-snoop.jpg",
+      "icon": "/img/space-snoop.webp",
       "short_description": "Скачай последнюю версию",
       "description": [
         "Скачай последнюю версию SpaceSnoop для исследования своей файловой системы."
@@ -201,14 +201,14 @@
     },
     {
       "title": "Эмулятор денди fceux-2.6.6-win64",
-      "icon": "/img/dendy.png",
+      "icon": "/img/dendy.webp",
       "short_description": "Для окунания в детство",
       "description": ["Зеркало, оригинал тута https://fceux.com/web/download.html."],
       "link": "Dendy_fceux-2.6.6-win64-QtSDL.zip"
     },
     {
       "title": "Сами игры денди",
-      "icon": "/img/dendy2.jpg",
+      "icon": "/img/dendy2.webp",
       "short_description": "Картриджы для денди",
       "description": ["Большая пачка, чип и деил, утиные истории и прочая классика тут."],
       "link": "Dendy_Roms.zip"

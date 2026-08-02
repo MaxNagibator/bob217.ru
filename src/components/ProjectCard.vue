@@ -42,7 +42,15 @@ const repo = computed(() => {
 <template>
   <article :class="['card', { expanded }]" :style="{ '--i': index }">
     <header class="card-head">
-      <img :src="iconSrc" alt="" class="card-icon" />
+      <img
+        :src="iconSrc"
+        alt=""
+        class="card-icon"
+        width="36"
+        height="36"
+        loading="lazy"
+        decoding="async"
+      />
       <h3 class="card-title">
         <a :href="card.link" target="_blank" rel="noopener noreferrer">{{ card.title }}</a>
       </h3>
@@ -51,12 +59,7 @@ const repo = computed(() => {
 
     <p class="card-desc">{{ card.short_description }}</p>
 
-    <button
-      class="card-more"
-      :aria-expanded="expanded"
-      aria-label="Показать подробности"
-      @click="emit('toggle')"
-    >
+    <button class="card-more" :aria-expanded="expanded" @click="emit('toggle')">
       {{ expanded ? '- скрыть' : '+ подробнее' }}
     </button>
 

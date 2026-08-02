@@ -22,6 +22,7 @@ interface NavLink {
 const route = useRoute()
 const isMenuOpen = ref(false)
 const isScrolled = ref(false)
+const toggleButton = ref<HTMLButtonElement | null>(null)
 
 const navLinks: NavLink[] = [
   { to: '/', label: 'Главная', icon: Home },
@@ -47,34 +48,44 @@ const handleScroll = (): void => {
   isScrolled.value = window.scrollY > 20
 }
 
+const handleKeydown = (event: KeyboardEvent): void => {
+  if (event.key !== 'Escape' || !isMenuOpen.value) return
+  closeMenu()
+  toggleButton.value?.focus()
+}
+
 const isActive = (path: string): boolean => {
   return route.path === path
 }
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  window.addEventListener('keydown', handleKeydown)
   handleScroll()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('keydown', handleKeydown)
   document.body.style.overflow = ''
 })
 </script>
 
 <template>
   <header :class="['nav-header', { scrolled: isScrolled }]">
-    <nav class="nav-container">
+    <nav class="nav-container" aria-label="Основная навигация">
       <RouterLink to="/" class="nav-logo" @click="closeMenu">
         <PiggyBank class="logo-icon" :size="28" />
         <span class="logo-text">bob217</span>
       </RouterLink>
 
       <button
+        ref="toggleButton"
         class="nav-toggle"
         :class="{ active: isMenuOpen }"
         @click="toggleMenu"
         aria-label="Меню навигации"
+        aria-controls="nav-menu"
         :aria-expanded="isMenuOpen"
       >
         <span class="hamburger-line"></span>
@@ -82,7 +93,7 @@ onBeforeUnmount(() => {
         <span class="hamburger-line"></span>
       </button>
 
-      <div :class="['nav-menu', { open: isMenuOpen }]">
+      <div id="nav-menu" :class="['nav-menu', { open: isMenuOpen }]">
         <RouterLink
           v-for="link in navLinks"
           :key="link.to"
@@ -262,12 +273,16 @@ onBeforeUnmount(() => {
     padding: var(--spacing-xl);
     background: var(--color-bg-secondary);
     transform: translateX(100%);
-    transition: transform var(--transition-base);
+    visibility: hidden;
+    transition:
+      transform var(--transition-base),
+      visibility var(--transition-base);
     z-index: var(--z-sticky);
   }
 
   .nav-menu.open {
     transform: translateX(0);
+    visibility: visible;
   }
 
   .nav-link {
