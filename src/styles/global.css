@@ -137,6 +137,38 @@ h3 {
   }
 }
 
+.typed {
+  animation: type-line 0.42s steps(20, end) backwards;
+  animation-delay: var(--trail, 0ms);
+}
+
+@keyframes type-line {
+  from {
+    clip-path: inset(0 100% 0 0);
+    filter: brightness(1.8);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    filter: brightness(1);
+  }
+}
+
+.caret {
+  display: inline-block;
+  width: 1ch;
+  height: 1.05em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: var(--color-accent);
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typed {
+    animation: none;
+  }
+}
+
 .sr-only {
   position: absolute;
   overflow: hidden;
