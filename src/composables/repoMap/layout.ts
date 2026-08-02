@@ -1,4 +1,5 @@
-import { DOMAINS, langColor, type Domain, type Repo } from '@/composables/useForkMap'
+import { DOMAINS, type Domain, type Repo } from '@/composables/useForkMap'
+import { langColor } from '@/utils/lang'
 import { convexHull, D2R, expandHull, type Point } from './math'
 import type { Anchor, Node } from './types'
 

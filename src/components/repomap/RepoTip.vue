@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import MapCallout from '@/components/repomap/MapCallout.vue'
 import type { TipState } from '@/composables/repoMap/types'
-import { langColor } from '@/composables/useForkMap'
+import { langColor } from '@/utils/lang'
 import { fmtSize } from '@/utils/format'
 
 const props = defineProps<{

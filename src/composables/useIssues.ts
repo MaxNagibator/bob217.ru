@@ -1,5 +1,6 @@
 import { computed, ref, shallowRef } from 'vue'
-import { langColor, loadRepos, OWNER } from '@/composables/useForkMap'
+import { loadRepos, OWNER } from '@/composables/useForkMap'
+import { langColor } from '@/utils/lang'
 import { readCache, writeCache } from '@/utils/cache'
 import { fetchGitHub } from '@/utils/github'
 import { plural } from '@/utils/format'

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import { useCountUp } from '@/composables/useCountUp'
-import { LANG_SHORT } from '@/composables/useForkMap'
+import { LANG_SHORT } from '@/utils/lang'
 import type { PullRow } from '@/composables/usePullRequests'
 import { fmtDate, plural } from '@/utils/format'
 

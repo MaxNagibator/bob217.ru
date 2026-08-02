@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { langColor, LANG_SHORT } from '@/composables/useForkMap'
+import { langColor, LANG_SHORT } from '@/utils/lang'
 
 defineProps<{
   langs: { lang: string; count: number }[]

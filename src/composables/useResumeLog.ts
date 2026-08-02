@@ -1,5 +1,5 @@
 import { computed, type ComputedRef } from 'vue'
-import { LANG_COLORS } from '@/composables/useForkMap'
+import { LANG_COLORS } from '@/utils/lang'
 import type { ResumeEntry } from '@/types/resume'
 import resumeJson from '@/assets/data/resume.json'
 

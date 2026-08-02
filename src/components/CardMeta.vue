@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { langColor, LANG_SHORT, type Repo } from '@/composables/useForkMap'
+import type { Repo } from '@/composables/useForkMap'
+import { langColor, LANG_SHORT } from '@/utils/lang'
 import { fmtDate } from '@/utils/format'
 
 const props = defineProps<{
