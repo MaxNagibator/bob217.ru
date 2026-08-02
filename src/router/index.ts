@@ -21,6 +21,7 @@ const VIEWS: Record<SitePageName, RouteRecordSingleView['component']> = {
   log: () => import('../views/LogView.vue'),
   pulls: () => import('../views/PullRequestsView.vue'),
   issues: () => import('../views/IssuesView.vue'),
+  releases: () => import('../views/ReleasesView.vue'),
   repos: () => import('../views/RepoMapView.vue'),
   tarkov: () => import('../views/TarkovView.vue'),
   'not-found': () => import('../views/NotFoundView.vue'),

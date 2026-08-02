@@ -62,7 +62,7 @@ const rows = computed(() =>
 
 .row {
   display: grid;
-  grid-template-columns: 9ch 1fr auto;
+  grid-template-columns: 10ch 1fr auto;
   align-items: baseline;
   gap: var(--spacing-sm) var(--spacing-md);
   padding: var(--spacing-sm);
@@ -111,7 +111,7 @@ const rows = computed(() =>
 
 @media (max-width: 720px) {
   .row {
-    grid-template-columns: 9ch 1fr;
+    grid-template-columns: 10ch 1fr;
   }
 
   .note {

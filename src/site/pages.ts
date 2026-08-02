@@ -75,6 +75,15 @@ const PAGES = {
     sectionSummary: 'что ждёт работы',
     priority: 0.6,
   },
+  releases: {
+    path: '/releases',
+    title: 'Релизы – bob217',
+    description:
+      'Релизы проектов bob217 как вывод gh release list: версии, файлы сборок и сколько их скачали.',
+    navLabel: 'Релизы',
+    sectionSummary: 'готовые сборки и что скачивают',
+    priority: 0.6,
+  },
   repos: {
     path: '/repos',
     title: 'Карта репозиториев – bob217',
@@ -135,6 +144,7 @@ const SECTION_ORDER: readonly SitePageName[] = [
   'log',
   'issues',
   'pulls',
+  'releases',
   'repos',
   'resume',
   'about',

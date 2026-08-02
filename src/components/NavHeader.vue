@@ -12,6 +12,7 @@ import {
   GitCommitHorizontal,
   CircleDot,
   Network,
+  Package,
   type LucideIcon,
 } from 'lucide-vue-next'
 import { NAV_PAGES, type NavPageName } from '@/site/pages'
@@ -29,6 +30,7 @@ const NAV_ICONS: Record<NavPageName, LucideIcon> = {
   log: GitCommitHorizontal,
   pulls: GitPullRequest,
   issues: CircleDot,
+  releases: Package,
   repos: Network,
   tarkov: Clock,
 }
