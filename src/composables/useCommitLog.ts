@@ -1,5 +1,6 @@
 import { computed, ref, shallowRef } from 'vue'
 import { langColor, loadRepos, OWNER } from '@/composables/useForkMap'
+import { readCache, writeCache } from '@/utils/cache'
 import { fmtDate } from '@/utils/format'
 
 export interface Commit {
@@ -91,24 +92,9 @@ interface Cache {
   pages: Record<number, Commit[]>
 }
 
-const readCache = (): Cache => {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY)
-    if (!raw) return { total: 0, pages: {} }
-    const parsed = JSON.parse(raw) as { ts: number; cache?: Cache }
-    const fresh = Date.now() - parsed.ts < CACHE_TTL
-    return fresh && parsed.cache?.pages ? parsed.cache : { total: 0, pages: {} }
-  } catch {
-    return { total: 0, pages: {} }
-  }
-}
-
-const writeCache = (cache: Cache): void => {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), cache }))
-  } catch {
-    return
-  }
+const readLog = (): Cache => {
+  const hit = readCache<Cache>(CACHE_KEY, CACHE_TTL)
+  return hit?.pages ? hit : { total: 0, pages: {} }
 }
 
 const toCommit = (it: SearchItem): Commit => ({
@@ -169,7 +155,7 @@ export function useCommitLog() {
     loading.value = true
     error.value = null
     try {
-      const cache = readCache()
+      const cache = readLog()
       const hit = cache.pages[next]
       if (hit && cache.total) {
         total.value = cache.total
@@ -184,7 +170,7 @@ export function useCommitLog() {
         commits.value = next === 1 ? fresh : [...commits.value, ...fresh]
         cache.total = data.total_count
         cache.pages[next] = fresh
-        writeCache(cache)
+        writeCache(CACHE_KEY, cache)
       }
       page.value = next
       if (!langs.value.size) void loadLangs()

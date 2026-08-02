@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { readCache, writeCache } from '@/utils/cache'
 
 export interface Contributor {
   login: string
@@ -198,33 +199,20 @@ const fetchJson = async <T>(url: string): Promise<T> => {
 let repoListPromise: Promise<RepoResponse[]> | null = null
 let repoListAt = 0
 
-const readReposCache = (): RepoResponse[] | null => {
-  try {
-    const raw = localStorage.getItem(REPOS_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as { ts: number; data: RepoResponse[] }
-    return Date.now() - parsed.ts < REPOS_TTL ? parsed.data : null
-  } catch {
-    return null
-  }
-}
-
 const writeReposCache = (list: RepoResponse[]): void => {
-  const data = list.map((r) => ({
-    name: r.name,
-    stargazers_count: r.stargazers_count,
-    language: r.language,
-    forks_count: r.forks_count,
-    html_url: r.html_url,
-    description: r.description,
-    size: r.size,
-    pushed_at: r.pushed_at,
-  }))
-  try {
-    localStorage.setItem(REPOS_KEY, JSON.stringify({ ts: Date.now(), data }))
-  } catch {
-    return
-  }
+  writeCache(
+    REPOS_KEY,
+    list.map((r) => ({
+      name: r.name,
+      stargazers_count: r.stargazers_count,
+      language: r.language,
+      forks_count: r.forks_count,
+      html_url: r.html_url,
+      description: r.description,
+      size: r.size,
+      pushed_at: r.pushed_at,
+    })),
+  )
 }
 
 const fetchRepoList = (): Promise<RepoResponse[]> => {
@@ -232,7 +220,7 @@ const fetchRepoList = (): Promise<RepoResponse[]> => {
   if (!repoListPromise) {
     repoListAt = Date.now()
     repoListPromise = (async () => {
-      const cached = readReposCache()
+      const cached = readCache<RepoResponse[]>(REPOS_KEY, REPOS_TTL)
       if (cached) return cached
       const list = await fetchJson<RepoResponse[]>(REPOS_URL)
       writeReposCache(list)
@@ -267,25 +255,6 @@ const toRepo = (r: RepoResponse, contributors: Contributor[], commits: number | 
 export const loadRepos = async (): Promise<Repo[]> =>
   (await fetchRepoList()).map((r) => toRepo(r, [], null))
 
-const readMergedCache = (): MergedPull[] | null => {
-  try {
-    const raw = localStorage.getItem(MERGED_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as { ts: number; data: MergedPull[] }
-    return Date.now() - parsed.ts < MERGED_TTL ? parsed.data : null
-  } catch {
-    return null
-  }
-}
-
-const writeMergedCache = (list: MergedPull[]): void => {
-  try {
-    localStorage.setItem(MERGED_KEY, JSON.stringify({ ts: Date.now(), data: list }))
-  } catch {
-    return
-  }
-}
-
 let mergedPromise: Promise<MergedPull[]> | null = null
 let mergedAt = 0
 
@@ -294,7 +263,7 @@ export const loadMergedPulls = (onPage?: (found: number) => void): Promise<Merge
   if (!mergedPromise) {
     mergedAt = Date.now()
     mergedPromise = (async () => {
-      const cached = readMergedCache()
+      const cached = readCache<MergedPull[]>(MERGED_KEY, MERGED_TTL)
       if (cached) return cached
       const all: MergedPull[] = []
       for (let page = 1; page <= MERGED_PAGES; page++) {
@@ -309,7 +278,7 @@ export const loadMergedPulls = (onPage?: (found: number) => void): Promise<Merge
         onPage?.(all.length)
         if (data.items.length < 100) break
       }
-      writeMergedCache(all)
+      writeCache(MERGED_KEY, all)
       return all
     })().catch((e: unknown) => {
       mergedPromise = null
@@ -343,24 +312,8 @@ const loadContributors = async (
   )
 }
 
-const readCommitsCache = (): Record<string, number> => {
-  try {
-    const raw = localStorage.getItem(COMMITS_KEY)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw) as { ts: number; data: Record<string, number> }
-    return Date.now() - parsed.ts < COMMITS_TTL ? parsed.data : {}
-  } catch {
-    return {}
-  }
-}
-
-const writeCommitsCache = (data: Record<string, number>): void => {
-  try {
-    localStorage.setItem(COMMITS_KEY, JSON.stringify({ ts: Date.now(), data }))
-  } catch {
-    return
-  }
-}
+const readCommitsCache = (): Record<string, number> =>
+  readCache<Record<string, number>>(COMMITS_KEY, COMMITS_TTL) ?? {}
 
 const lastPage = (link: string | null): number | null => {
   const m = link?.match(/[?&]page=(\d+)>;\s*rel="last"/)
@@ -435,7 +388,7 @@ export function useForkMap() {
       }
     }
     await Promise.all(Array.from({ length: COMMITS_LANES }, lane))
-    writeCommitsCache(cache)
+    writeCache(COMMITS_KEY, cache)
     commitsState.value = failed ? 'partial' : 'ready'
   }
 

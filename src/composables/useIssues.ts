@@ -1,5 +1,6 @@
 import { computed, ref, shallowRef } from 'vue'
 import { langColor, loadRepos, OWNER } from '@/composables/useForkMap'
+import { readCache, writeCache } from '@/utils/cache'
 import { plural } from '@/utils/format'
 
 export interface Issue {
@@ -73,11 +74,36 @@ const ENDPOINT =
   `https://api.github.com/search/issues?q=is:issue+is:open+user:${OWNER}` +
   '&per_page=100&sort=created&order=desc'
 
+const CACHE_KEY = 'open-issues'
+const CACHE_TTL = 30 * 60 * 1000
+
 const DAY_MS = 86_400_000
 const DOT_GAP = 0.035
 const PENDING_COLOR = 'var(--color-text-muted)'
 
+interface Cache {
+  total: number
+  items: Issue[]
+}
+
 const repoFrom = (url: string): string => url.slice(url.lastIndexOf('/') + 1)
+
+const toIssue = (it: SearchItem): Issue => {
+  const repo = repoFrom(it.repository_url)
+  return {
+    id: it.id,
+    number: it.number,
+    title: it.title,
+    url: it.html_url,
+    repo,
+    repoUrl: `https://github.com/${OWNER}/${repo}`,
+    author: it.user.login,
+    authorUrl: it.user.html_url,
+    comments: it.comments,
+    createdAt: it.created_at,
+    updatedAt: it.updated_at,
+  }
+}
 
 const daysSince = (iso: string): number =>
   Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / DAY_MS))
@@ -110,27 +136,19 @@ export function useIssues() {
     loading.value = true
     error.value = null
     try {
-      const res = await fetch(ENDPOINT, { headers: HEADERS })
-      if (!res.ok)
-        throw new Error(res.status === 403 ? 'лимит GitHub исчерпан' : `GitHub ${res.status}`)
-      const data = (await res.json()) as SearchResponse
-      total.value = data.total_count
-      issues.value = data.items.map((it) => {
-        const repo = repoFrom(it.repository_url)
-        return {
-          id: it.id,
-          number: it.number,
-          title: it.title,
-          url: it.html_url,
-          repo,
-          repoUrl: `https://github.com/${OWNER}/${repo}`,
-          author: it.user.login,
-          authorUrl: it.user.html_url,
-          comments: it.comments,
-          createdAt: it.created_at,
-          updatedAt: it.updated_at,
-        }
-      })
+      const cached = readCache<Cache>(CACHE_KEY, CACHE_TTL)
+      if (cached?.items) {
+        total.value = cached.total
+        issues.value = cached.items
+      } else {
+        const res = await fetch(ENDPOINT, { headers: HEADERS })
+        if (!res.ok)
+          throw new Error(res.status === 403 ? 'лимит GitHub исчерпан' : `GitHub ${res.status}`)
+        const data = (await res.json()) as SearchResponse
+        total.value = data.total_count
+        issues.value = data.items.map(toIssue)
+        writeCache<Cache>(CACHE_KEY, { total: total.value, items: issues.value })
+      }
       void loadLangs()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'не удалось загрузить'

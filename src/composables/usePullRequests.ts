@@ -1,5 +1,6 @@
 import { computed, ref, shallowRef } from 'vue'
-import { langColor, loadRepos } from '@/composables/useForkMap'
+import { langColor, loadRepos, OWNER } from '@/composables/useForkMap'
+import { readCache, writeCache } from '@/utils/cache'
 import { plural } from '@/utils/format'
 
 export interface PullRequest {
@@ -70,7 +71,8 @@ interface CachedDetail {
 }
 
 const ENDPOINT =
-  'https://api.github.com/search/issues?q=is:pr+is:open+user:MaxNagibator&per_page=100&sort=updated'
+  `https://api.github.com/search/issues?q=is:pr+is:open+user:${OWNER}` +
+  '&per_page=100&sort=updated'
 
 const HEADERS = { Accept: 'application/vnd.github+json' }
 
@@ -88,24 +90,8 @@ const repoFrom = (url: string): string => url.slice(url.lastIndexOf('/') + 1)
 
 const detailKey = (pr: PullRequest): string => `${pr.repo}#${pr.number}`
 
-const readDetails = (): Record<string, CachedDetail> => {
-  try {
-    const raw = localStorage.getItem(DETAILS_KEY)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw) as { ts: number; data: Record<string, CachedDetail> }
-    return Date.now() - parsed.ts < DETAILS_TTL ? parsed.data : {}
-  } catch {
-    return {}
-  }
-}
-
-const writeDetails = (data: Record<string, CachedDetail>): void => {
-  try {
-    localStorage.setItem(DETAILS_KEY, JSON.stringify({ ts: Date.now(), data }))
-  } catch {
-    return
-  }
-}
+const readDetails = (): Record<string, CachedDetail> =>
+  readCache<Record<string, CachedDetail>>(DETAILS_KEY, DETAILS_TTL) ?? {}
 
 const applyDetail = (pr: PullRequest, d: PullDetail): void => {
   pr.commits = d.commits
@@ -197,7 +183,7 @@ export function usePullRequests() {
         fetched = true
       }),
     )
-    if (fetched) writeDetails(cache)
+    if (fetched) writeCache(DETAILS_KEY, cache)
   }
 
   const stats = computed<PullStats>(() => ({
