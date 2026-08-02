@@ -7,6 +7,7 @@ import { useCmdReplay } from '@/composables/useCmdReplay'
 import CmdLine from '@/components/CmdLine.vue'
 import InfoBlock from '@/components/InfoBlock.vue'
 import CardSection from '@/components/CardSection.vue'
+import SectionList from '@/components/SectionList.vue'
 import ErrorBoundary from '@/components/ErrorBoundary.vue'
 import PiggyBank from '@/components/PiggyBank.vue'
 
@@ -48,6 +49,8 @@ const { phaseClass, start, print } = useCmdReplay(() => 240 + sectionCount.value
       </header>
 
       <InfoBlock class="cmd-out" style="--print-delay: 200ms" />
+
+      <SectionList class="cmd-out" style="--print-delay: 220ms" :repo-count="repos.size" />
 
       <div>
         <CardSection
