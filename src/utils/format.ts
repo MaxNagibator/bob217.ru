@@ -19,6 +19,9 @@ export const ago = (iso: string): string => {
   return `${days} ${plural(days, 'день', 'дня', 'дней')} назад`
 }
 
+export const fmtTime = (iso: string): string =>
+  iso ? new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''
+
 export const fmtDate = (iso: string): string =>
   iso
     ? new Date(iso)

@@ -28,11 +28,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Refresh releases snapshot
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run releases
-
       - name: Type-check
         run: npm run type-check
 

@@ -1,14 +1,25 @@
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import CmdLine from '@/components/CmdLine.vue'
 import RepoReleases from '@/components/releases/RepoReleases.vue'
 import StatStrip from '@/components/stats/StatStrip.vue'
+import TermLines from '@/components/TermLines.vue'
 import { useCmdRun } from '@/composables/useCmdRun'
 import { useReleases } from '@/composables/useReleases'
 import type { StatItem } from '@/types/stat'
-import { fmtDate, plural } from '@/utils/format'
+import { fmtTime, plural } from '@/utils/format'
 
-const { groups, stats, generatedAt } = useReleases()
+type ReleasesState = 'boot' | 'error' | 'empty' | 'ready'
+
+const BOOT_LINES = ['gh: querying api.github.com…', 'Receiving releases…']
+
+const { groups, stats, fetchedAt, loading, loaded, error, load } = useReleases()
+
+const view = computed<ReleasesState>(() => {
+  if (groups.value.length) return 'ready'
+  if (error.value) return 'error'
+  return loaded.value ? 'empty' : 'boot'
+})
 
 const open = ref<string | null>(null)
 
@@ -33,6 +44,8 @@ const metrics = computed<StatItem[]>(() => [
 ])
 
 const { runKey, running, begin, finish } = useCmdRun()
+
+onMounted(load)
 </script>
 
 <template>
@@ -51,14 +64,17 @@ const { runKey, running, begin, finish } = useCmdRun()
       </header>
 
       <div class="stage" :class="{ running }">
+        <TermLines v-if="view === 'boot' || running" :lines="BOOT_LINES" class="boot" />
+
         <div :key="runKey" class="out">
-          <template v-if="groups.length">
+          <template v-if="view === 'ready'">
             <StatStrip :items="metrics" class="strip" />
 
             <p class="legend">
               <span class="key"><i class="chip now">latest</i> текущая версия</span>
               <span class="key"><i class="dot" aria-hidden="true"></i> релиз на оси времени</span>
               <span class="key">↓ скачивания файлов релиза</span>
+              <span v-if="error" class="stale">· {{ error }}</span>
             </p>
 
             <div class="tree">
@@ -72,14 +88,21 @@ const { runKey, running, begin, finish } = useCmdRun()
             </div>
 
             <p class="foot">
-              <span class="stamp"># снапшот собран {{ fmtDate(generatedAt) }}</span>
+              <button class="cmd-btn" :disabled="loading" @click="load(true)">
+                <span class="p">$</span> {{ loading ? 'обновляю…' : 'обновить' }}
+              </button>
+              <span class="stamp"># получено в {{ fmtTime(fetchedAt) }}</span>
             </p>
           </template>
 
-          <div v-else class="fail">
-            <p class="fatal"><span class="kw">fatal:</span> релизы не собраны</p>
-            <p class="note"># снапшот пуст – запусти npm run releases перед сборкой</p>
+          <div v-else-if="view === 'error'" class="fail">
+            <p class="fatal"><span class="kw">fatal:</span> {{ error }}</p>
+            <button class="cmd-btn" :disabled="loading" @click="load(true)">
+              <span class="p">$</span> {{ loading ? 'повторяю…' : 'повторить' }}
+            </button>
           </div>
+
+          <p v-else-if="view === 'empty'" class="note"># ни одного собранного релиза</p>
         </div>
       </div>
     </div>
@@ -128,6 +151,12 @@ const { runKey, running, begin, finish } = useCmdRun()
   min-height: 120px;
 }
 
+.stage .boot {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 .stage.running .out {
   visibility: hidden;
 }
@@ -169,17 +198,52 @@ const { runKey, running, begin, finish } = useCmdRun()
   background: var(--color-text-muted);
 }
 
+.stale {
+  color: var(--color-danger);
+}
+
 .foot {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
   margin: var(--spacing-xl) 0 0;
   font-family: var(--font-family-mono);
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
 
+.cmd-btn {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cmd-btn .p {
+  color: var(--color-accent);
+}
+
+.cmd-btn:hover:not(:disabled) {
+  color: var(--color-text-primary);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.cmd-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 .fail {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  align-items: flex-start;
+  gap: var(--spacing-md);
   font-family: var(--font-family-mono);
 }
 
