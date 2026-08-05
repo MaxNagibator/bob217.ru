@@ -11,6 +11,7 @@ export interface PullRequest {
   url: string
   number: number
   repo: string
+  repoUrl: string
   apiUrl: string
   author: string
   authorUrl: string
@@ -88,6 +89,13 @@ const PENDING_COLOR = 'var(--color-text-muted)'
 
 const repoFrom = (url: string): string => url.slice(url.lastIndexOf('/') + 1)
 
+const repoUrlFrom = (repositoryUrl: string): string => {
+  const cut = repositoryUrl.indexOf('/repos/')
+  return cut > 0
+    ? `https://github.com/${repositoryUrl.slice(cut + 7)}`
+    : `https://github.com/${OWNER}/${repoFrom(repositoryUrl)}`
+}
+
 const detailKey = (pr: PullRequest): string => `${pr.repo}#${pr.number}`
 
 const readDetails = (): Record<string, CachedDetail> =>
@@ -134,6 +142,7 @@ export function usePullRequests() {
         url: it.html_url,
         number: it.number,
         repo: repoFrom(it.repository_url),
+        repoUrl: repoUrlFrom(it.repository_url),
         apiUrl: `${it.repository_url}/pulls/${it.number}`,
         author: it.user.login,
         authorUrl: it.user.html_url,

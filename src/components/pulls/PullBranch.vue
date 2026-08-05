@@ -47,8 +47,10 @@ const cells = computed<DiffCell[]>(() => {
 
     <div class="body">
       <p class="head">
-        <span class="repo">{{ pr.repo }}</span>
-        <span class="num">#{{ pr.number }}</span>
+        <a class="repo" :href="pr.repoUrl" target="_blank" rel="noopener noreferrer">{{
+          pr.repo
+        }}</a>
+        <a class="num" :href="pr.url" target="_blank" rel="noopener noreferrer">#{{ pr.number }}</a>
         <span v-if="pr.draft" class="draft">draft</span>
         <i class="fill" aria-hidden="true"></i>
         <span class="age">{{ row.age }}</span>
@@ -242,7 +244,15 @@ const cells = computed<DiffCell[]>(() => {
 }
 
 .num {
+  color: inherit;
   font-variant-numeric: tabular-nums;
+}
+
+.repo:hover,
+.repo:focus-visible,
+.num:hover,
+.num:focus-visible {
+  text-decoration: underline;
 }
 
 .draft {
