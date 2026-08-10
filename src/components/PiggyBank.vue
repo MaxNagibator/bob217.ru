@@ -152,8 +152,9 @@ onBeforeUnmount(() => {
         @mouseleave="handlePiggyMouseLeave"
         role="button"
         tabindex="0"
-        @keydown.enter="handleClick"
-        @keydown.space="handleClick"
+        aria-label="Копилка"
+        @keydown.enter.prevent="handleClick"
+        @keydown.space.prevent="handleClick"
       >
         🐷
       </div>

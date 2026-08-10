@@ -9,27 +9,33 @@ import {
   PiggyBank,
   Clock,
   GitPullRequest,
+  GitCommitHorizontal,
+  CircleDot,
+  Network,
+  Package,
   type LucideIcon,
 } from 'lucide-vue-next'
-
-interface NavLink {
-  to: string
-  label: string
-  icon: LucideIcon
-}
+import { NAV_PAGES, type NavPageName } from '@/site/pages'
 
 const route = useRoute()
 const isMenuOpen = ref(false)
 const isScrolled = ref(false)
+const toggleButton = ref<HTMLButtonElement | null>(null)
 
-const navLinks: NavLink[] = [
-  { to: '/', label: 'Главная', icon: Home },
-  { to: '/donate', label: 'Донат', icon: Heart },
-  { to: '/resume', label: 'Резюме', icon: FileText },
-  { to: '/about', label: 'О нас', icon: Info },
-  { to: '/pulls', label: 'PR', icon: GitPullRequest },
-  { to: '/tarkov', label: 'Тарков', icon: Clock },
-]
+const NAV_ICONS: Record<NavPageName, LucideIcon> = {
+  home: Home,
+  donate: Heart,
+  resume: FileText,
+  about: Info,
+  log: GitCommitHorizontal,
+  pulls: GitPullRequest,
+  issues: CircleDot,
+  releases: Package,
+  repos: Network,
+  tarkov: Clock,
+}
+
+const navLinks = NAV_PAGES.map((page) => ({ ...page, icon: NAV_ICONS[page.name] }))
 
 const toggleMenu = (): void => {
   isMenuOpen.value = !isMenuOpen.value
@@ -45,34 +51,44 @@ const handleScroll = (): void => {
   isScrolled.value = window.scrollY > 20
 }
 
+const handleKeydown = (event: KeyboardEvent): void => {
+  if (event.key !== 'Escape' || !isMenuOpen.value) return
+  closeMenu()
+  toggleButton.value?.focus()
+}
+
 const isActive = (path: string): boolean => {
   return route.path === path
 }
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  window.addEventListener('keydown', handleKeydown)
   handleScroll()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('keydown', handleKeydown)
   document.body.style.overflow = ''
 })
 </script>
 
 <template>
   <header :class="['nav-header', { scrolled: isScrolled }]">
-    <nav class="nav-container">
+    <nav class="nav-container" aria-label="Основная навигация">
       <RouterLink to="/" class="nav-logo" @click="closeMenu">
         <PiggyBank class="logo-icon" :size="28" />
         <span class="logo-text">bob217</span>
       </RouterLink>
 
       <button
+        ref="toggleButton"
         class="nav-toggle"
         :class="{ active: isMenuOpen }"
         @click="toggleMenu"
         aria-label="Меню навигации"
+        aria-controls="nav-menu"
         :aria-expanded="isMenuOpen"
       >
         <span class="hamburger-line"></span>
@@ -80,12 +96,12 @@ onBeforeUnmount(() => {
         <span class="hamburger-line"></span>
       </button>
 
-      <div :class="['nav-menu', { open: isMenuOpen }]">
+      <div id="nav-menu" :class="['nav-menu', { open: isMenuOpen }]">
         <RouterLink
           v-for="link in navLinks"
-          :key="link.to"
-          :to="link.to"
-          :class="['nav-link', { active: isActive(link.to) }]"
+          :key="link.path"
+          :to="link.path"
+          :class="['nav-link', { active: isActive(link.path) }]"
           @click="closeMenu"
         >
           <component :is="link.icon" class="nav-icon" :size="18" />
@@ -179,7 +195,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-sm);
+  white-space: nowrap;
   text-decoration: none;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
@@ -260,12 +277,16 @@ onBeforeUnmount(() => {
     padding: var(--spacing-xl);
     background: var(--color-bg-secondary);
     transform: translateX(100%);
-    transition: transform var(--transition-base);
+    visibility: hidden;
+    transition:
+      transform var(--transition-base),
+      visibility var(--transition-base);
     z-index: var(--z-sticky);
   }
 
   .nav-menu.open {
     transform: translateX(0);
+    visibility: visible;
   }
 
   .nav-link {

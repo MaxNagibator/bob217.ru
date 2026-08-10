@@ -98,29 +98,34 @@ h3 {
 }
 
 .cmd-clearing .cmd-out {
-  opacity: 0;
-  transform: translateY(-10px);
-  filter: blur(4px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.28s ease,
-    filter 0.28s ease;
+  animation: cmd-clear 0.26s steps(10, end) both;
+  animation-delay: var(--clear-delay, 0ms);
+}
+
+@keyframes cmd-clear {
+  from {
+    clip-path: inset(0 0 0 0);
+    filter: brightness(1);
+  }
+  to {
+    clip-path: inset(0 0 0 100%);
+    filter: brightness(2.2);
+  }
 }
 
 .cmd-printing .cmd-out {
-  opacity: 0;
-  animation: cmd-print 0.32s ease-out forwards;
+  animation: cmd-print 0.42s steps(16, end) backwards;
   animation-delay: var(--print-delay, 0ms);
 }
 
 @keyframes cmd-print {
   from {
-    opacity: 0;
-    transform: translateY(8px);
+    clip-path: inset(0 100% 0 0);
+    filter: brightness(2.2);
   }
   to {
-    opacity: 1;
-    transform: none;
+    clip-path: inset(0 0 0 0);
+    filter: brightness(1);
   }
 }
 
@@ -128,8 +133,39 @@ h3 {
   .cmd-clearing .cmd-out,
   .cmd-printing .cmd-out {
     animation: none;
-    transition: none;
     opacity: 1;
+  }
+}
+
+.typed {
+  animation: type-line 0.42s steps(20, end) backwards;
+  animation-delay: var(--trail, 0ms);
+}
+
+@keyframes type-line {
+  from {
+    clip-path: inset(0 100% 0 0);
+    filter: brightness(1.8);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    filter: brightness(1);
+  }
+}
+
+.caret {
+  display: inline-block;
+  width: 1ch;
+  height: 1.05em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: var(--color-accent);
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typed {
+    animation: none;
   }
 }
 

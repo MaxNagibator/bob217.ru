@@ -4,6 +4,7 @@ export interface Card {
   short_description: string
   description: readonly string[]
   link: string
+  repo?: string
 }
 
 export interface CardsData {

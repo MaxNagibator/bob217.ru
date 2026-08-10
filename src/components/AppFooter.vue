@@ -9,6 +9,7 @@ import {
   PiggyBank,
   type LucideIcon,
 } from 'lucide-vue-next'
+import { NAV_PAGES } from '@/site/pages'
 
 interface SocialLink {
   url: string
@@ -18,14 +19,7 @@ interface SocialLink {
 
 const currentYear = new Date().getFullYear()
 
-const navLinks = [
-  { to: '/', label: 'Главная' },
-  { to: '/donate', label: 'Донат' },
-  { to: '/resume', label: 'Резюме' },
-  { to: '/about', label: 'О нас' },
-  { to: '/pulls', label: 'PR' },
-  { to: '/tarkov', label: 'Тарков' },
-] as const
+const navLinks = NAV_PAGES
 
 const socialLinks: SocialLink[] = [
   { url: 'https://t.me/bobito217', label: 'Telegram', icon: MessageCircle },
@@ -50,7 +44,7 @@ const socialLinks: SocialLink[] = [
       <div class="footer-section">
         <p class="footer-title">ссылки</p>
         <nav class="footer-nav">
-          <RouterLink v-for="item in navLinks" :key="item.to" :to="item.to" class="footer-link">
+          <RouterLink v-for="item in navLinks" :key="item.path" :to="item.path" class="footer-link">
             {{ item.label }}
           </RouterLink>
         </nav>

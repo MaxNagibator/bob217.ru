@@ -2,13 +2,17 @@
 import { computed, onBeforeUnmount, onMounted, ref, type ComponentPublicInstance } from 'vue'
 import type { Card } from '@/types/card'
 import ProjectCard from './ProjectCard.vue'
+import type { RepoIndex } from '@/composables/useCardRepos'
 
 interface Props {
   title: string
   cards: readonly Card[]
+  repos?: RepoIndex
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  repos: () => new Map(),
+})
 
 const groupRef = ref<ComponentPublicInstance | null>(null)
 const expandedIndex = ref<number | null>(null)
@@ -58,6 +62,7 @@ const detailRow = computed(() =>
         :key="card.title"
         :card="card"
         :index="index"
+        :repos="repos"
         :expanded="expandedIndex === index"
         @toggle="toggle(index)"
       />

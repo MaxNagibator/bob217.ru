@@ -1,120 +1,20 @@
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed } from 'vue'
+import { useWeekSchedule } from '@/composables/useWeekSchedule'
 
-const enum DayOfWeek {
-  Sunday = 0,
-  Monday = 1,
-  Tuesday = 2,
-  Wednesday = 3,
-  Thursday = 4,
-  Friday = 5,
-  Saturday = 6,
-}
+const { days } = useWeekSchedule()
 
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  [DayOfWeek.Monday]: 'Понедельник',
-  [DayOfWeek.Tuesday]: 'Вторник',
-  [DayOfWeek.Wednesday]: 'Среда',
-  [DayOfWeek.Thursday]: 'Четверг',
-  [DayOfWeek.Friday]: 'Пятница',
-  [DayOfWeek.Saturday]: 'Суббота',
-  [DayOfWeek.Sunday]: 'Воскресенье',
-} as const
-
-interface LinkInfo {
-  url: string
-  text: string
-}
-
-interface ScheduleDay {
-  day: DayOfWeek
-  description: string
-  link?: LinkInfo
-}
-
-const LINKS = {
-  STREAM: { url: 'https://www.twitch.tv/bobito217', text: 'Стрим' },
-  YOUTUBE: { url: 'https://www.youtube.com/@bobito217', text: 'Ютубчик' },
-} as const
-
-const schedule: readonly ScheduleDay[] = [
-  {
-    day: DayOfWeek.Monday,
-    description: 'Работы по основной задаче.',
-    link: LINKS.STREAM,
-  },
-  {
-    day: DayOfWeek.Tuesday,
-    description: 'Работы по основной задаче.',
-    link: LINKS.YOUTUBE,
-  },
-  {
-    day: DayOfWeek.Wednesday,
-    description: 'Работы по основной задаче.',
-    link: LINKS.STREAM,
-  },
-  {
-    day: DayOfWeek.Thursday,
-    description: 'Работы по основной задаче. Вопросы/Задачки для собеседования временно отменено',
-    link: LINKS.STREAM,
-  },
-  {
-    day: DayOfWeek.Friday,
-    description: 'Работы по основной задаче. Обзор творений, присланных на ревью временно отменён',
-    link: LINKS.STREAM,
-  },
-  {
-    day: DayOfWeek.Saturday,
-    description: 'отдыхаем. Но мб чего и будем делать.',
-  },
-  {
-    day: DayOfWeek.Sunday,
-    description: 'отдыхаем. Но мб чего и будем делать.',
-  },
-] as const
-
-const getCurrentDayOfWeek = (): DayOfWeek => new Date().getDay() as DayOfWeek
-
-const getWeekOrderValue = (day: DayOfWeek): number => (day + 6) % 7
-
-const today = ref(getCurrentDayOfWeek())
-let intervalId: number | undefined
-
-onMounted(() => {
-  intervalId = window.setInterval(() => {
-    today.value = getCurrentDayOfWeek()
-  }, 60_000)
-})
-
-onBeforeUnmount(() => {
-  if (intervalId) {
-    clearInterval(intervalId)
-  }
-})
-
-const scheduleWithStatus = computed(() => {
-  const currentDayOrder = getWeekOrderValue(today.value)
-
-  return schedule.map((item) => {
-    const itemDayOrder = getWeekOrderValue(item.day)
-
-    return {
-      ...item,
-      label: DAY_LABELS[item.day],
-      isCurrent: item.day === today.value,
-      isPast: itemDayOrder < currentDayOrder,
-    }
-  })
-})
+const merged = computed(() => days.value.some((d) => d.merges && (d.isPast || d.isCurrent)))
 </script>
 
 <template>
   <ul class="week">
     <li
-      v-for="item in scheduleWithStatus"
+      v-for="item in days"
       :key="item.day"
+      class="day"
       :class="[
-        'day',
+        `on-${item.lane}`,
         {
           'is-today': item.isCurrent,
           'is-past': item.isPast,
@@ -123,11 +23,20 @@ const scheduleWithStatus = computed(() => {
       ]"
       :aria-current="item.isCurrent ? 'date' : undefined"
     >
-      <span class="rail" aria-hidden="true"></span>
+      <span class="rail" aria-hidden="true">
+        <i class="trunk"></i>
+        <i v-if="item.lane === 'weekend'" class="branch" :class="{ capped: item.merges }"></i>
+        <i v-if="item.forks" class="fork"></i>
+        <i v-if="item.merges" class="merge"></i>
+        <i class="node"></i>
+      </span>
+
       <div class="day-body">
         <p class="day-head">
           <span class="day-name">{{ item.label }}</span>
-          <span v-if="item.isCurrent" class="head-ref">HEAD</span>
+          <span class="day-date">{{ item.date }}</span>
+          <span v-if="item.isCurrent" class="chip head">HEAD</span>
+          <span v-else-if="item.branchTip" class="chip">weekend</span>
         </p>
         <p class="day-text">
           <a
@@ -135,7 +44,7 @@ const scheduleWithStatus = computed(() => {
             :href="item.link.url"
             target="_blank"
             rel="noopener noreferrer"
-            :aria-label="`${item.link.text} — откроется в новой вкладке`"
+            :aria-label="`${item.link.text} – откроется в новой вкладке`"
           >
             {{ item.link.text }}
           </a>
@@ -144,12 +53,26 @@ const scheduleWithStatus = computed(() => {
         </p>
       </div>
     </li>
+
+    <li class="day tail on-main" :class="{ 'is-past': merged }" aria-hidden="true">
+      <span class="rail">
+        <i class="trunk"></i>
+        <i class="node"></i>
+      </span>
+      <p class="tail-text">weekend → main</p>
+    </li>
   </ul>
 </template>
 
 <style scoped>
 .week {
+  --lane-a: 14px;
+  --lane-b: 34px;
+  --rail-w: 50px;
   --node-y: 12px;
+  --rail-color: var(--color-bg-tertiary);
+  --rail-done: #5c5c5c;
+  --curve: 11px;
 
   margin: 0;
   padding: 0;
@@ -158,53 +81,109 @@ const scheduleWithStatus = computed(() => {
 
 .day {
   display: grid;
-  grid-template-columns: 28px 1fr;
+  grid-template-columns: var(--rail-w) 1fr;
+}
+
+.day.on-main {
+  --lane: var(--lane-a);
+}
+
+.day.on-weekend {
+  --lane: var(--lane-b);
+}
+
+.day.is-past,
+.day.is-today {
+  --rail-color: var(--rail-done);
+}
+
+.day.is-today {
+  --node-y: 21px;
 }
 
 .rail {
   position: relative;
+  display: block;
 }
 
-.rail::before {
-  content: '';
+.trunk,
+.branch {
   position: absolute;
-  left: 50%;
   top: 0;
   bottom: 0;
   width: 2px;
-  transform: translateX(-50%);
-  background: var(--color-bg-tertiary);
+  background: var(--rail-color);
 }
 
-.day:first-child .rail::before {
+.trunk {
+  left: var(--lane-a);
+}
+
+.branch {
+  left: var(--lane-b);
+}
+
+.day:first-child .trunk {
   top: var(--node-y);
 }
 
-.day:last-child .rail::before {
-  bottom: calc(100% - var(--node-y));
+.branch.capped,
+.day.tail .trunk {
+  bottom: auto;
+  height: var(--node-y);
 }
 
-.rail::after {
-  content: '';
+.fork,
+.merge {
   position: absolute;
-  left: 50%;
+  left: var(--lane-a);
+  top: var(--node-y);
+  bottom: 0;
+  width: calc(var(--lane-b) - var(--lane-a) + 2px);
+}
+
+.fork {
+  border-left: 2px solid var(--rail-color);
+  border-bottom: 2px solid var(--rail-color);
+  border-bottom-left-radius: var(--curve);
+}
+
+.merge {
+  border-right: 2px solid var(--rail-color);
+  border-bottom: 2px solid var(--rail-color);
+  border-bottom-right-radius: var(--curve);
+}
+
+.node {
+  position: absolute;
+  left: calc(var(--lane) + 1px);
   top: var(--node-y);
   width: 11px;
   height: 11px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: var(--color-bg-tertiary);
-  border: 2px solid var(--color-bg-tertiary);
-}
-
-.day.is-future .rail::after {
+  border: 2px solid var(--rail-color);
   background: var(--color-bg-primary);
 }
 
-.day.is-today .rail::after {
-  background: var(--color-accent);
+.day.is-past .node {
+  background: var(--rail-color);
+}
+
+.day.is-today .node {
+  width: 15px;
+  height: 15px;
   border-color: var(--color-accent);
-  box-shadow: var(--shadow-glow);
+  background: var(--color-accent);
+  box-shadow:
+    0 0 0 4px rgba(255, 204, 0, 0.14),
+    var(--shadow-glow);
+}
+
+.day.tail .node {
+  width: 8px;
+  height: 8px;
+  border-width: 2px;
 }
 
 .day-body {
@@ -212,17 +191,22 @@ const scheduleWithStatus = computed(() => {
   padding-bottom: var(--spacing-md);
 }
 
-.day:last-child .day-body {
-  padding-bottom: 0;
+.day.is-past .day-body {
+  opacity: 0.45;
 }
 
-.day.is-past .day-body {
-  opacity: 0.55;
+.day.is-today .day-body {
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  background: var(--color-bg-elevated);
+  border: 1px solid rgba(255, 204, 0, 0.28);
+  border-radius: var(--radius-md);
 }
 
 .day-head {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  flex-wrap: wrap;
   gap: var(--spacing-sm);
   margin: 0;
   font-family: var(--font-family-mono);
@@ -230,17 +214,34 @@ const scheduleWithStatus = computed(() => {
   color: var(--color-text-primary);
 }
 
+.day.is-past .day-name,
+.day.is-future .day-name {
+  font-weight: 400;
+}
+
 .day.is-today .day-name {
   color: var(--color-accent);
   font-weight: 700;
 }
 
-.head-ref {
+.day-date {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chip {
   font-size: var(--font-size-xs);
   line-height: 1.4;
   padding: 0 var(--spacing-sm);
-  border: 1px solid var(--color-accent);
+  border: 1px solid var(--color-bg-tertiary);
   border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  letter-spacing: 0.08em;
+}
+
+.chip.head {
+  border-color: var(--color-accent);
   color: var(--color-accent);
 }
 
@@ -258,5 +259,23 @@ const scheduleWithStatus = computed(() => {
 .day-text a:hover {
   color: var(--color-link-hover);
   text-decoration: underline;
+}
+
+.tail-text {
+  margin: 0;
+  line-height: 24px;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+@media (max-width: 720px) {
+  .week {
+    --lane-b: 28px;
+    --rail-w: 42px;
+    --curve: 9px;
+  }
 }
 </style>

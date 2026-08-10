@@ -2,16 +2,20 @@
 import { computed } from 'vue'
 import type { Card } from '@/types/card'
 import { ExternalLink } from 'lucide-vue-next'
+import CardMeta from './CardMeta.vue'
+import { cardKey, type RepoIndex } from '@/composables/useCardRepos'
 
 interface Props {
   card: Card
   index?: number
   expanded?: boolean
+  repos?: RepoIndex
 }
 
 const props = withDefaults(defineProps<Props>(), {
   index: 0,
   expanded: false,
+  repos: () => new Map(),
 })
 
 const emit = defineEmits<{
@@ -28,12 +32,25 @@ const linkLabel = computed(() => {
     return props.card.link
   }
 })
+
+const repo = computed(() => {
+  const key = cardKey(props.card)
+  return key ? props.repos.get(key) : undefined
+})
 </script>
 
 <template>
   <article :class="['card', { expanded }]" :style="{ '--i': index }">
     <header class="card-head">
-      <img :src="iconSrc" alt="" class="card-icon" />
+      <img
+        :src="iconSrc"
+        alt=""
+        class="card-icon"
+        width="36"
+        height="36"
+        loading="lazy"
+        decoding="async"
+      />
       <h3 class="card-title">
         <a :href="card.link" target="_blank" rel="noopener noreferrer">{{ card.title }}</a>
       </h3>
@@ -42,23 +59,19 @@ const linkLabel = computed(() => {
 
     <p class="card-desc">{{ card.short_description }}</p>
 
-    <a :href="card.link" class="card-link" target="_blank" rel="noopener noreferrer">
-      {{ linkLabel }}
-    </a>
-
-    <button
-      class="card-more"
-      :aria-expanded="expanded"
-      aria-label="Показать подробности"
-      @click="emit('toggle')"
-    >
+    <button class="card-more" :aria-expanded="expanded" @click="emit('toggle')">
       {{ expanded ? '- скрыть' : '+ подробнее' }}
     </button>
+
+    <footer class="card-foot">
+      <CardMeta :repo="repo" :href="card.link" :fallback="linkLabel" />
+    </footer>
   </article>
 </template>
 
 <style scoped>
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
@@ -66,6 +79,7 @@ const linkLabel = computed(() => {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-bg-tertiary);
   border-radius: var(--radius-md);
+  overflow: hidden;
   transition:
     border-color var(--transition-fast),
     transform var(--transition-fast);
@@ -139,18 +153,10 @@ const linkLabel = computed(() => {
   color: var(--color-text-secondary);
 }
 
-.card-link {
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-xs);
-  color: var(--color-link);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.card-link:hover {
-  color: var(--color-link-hover);
-  text-decoration: underline;
+.card-foot {
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-bg-tertiary);
 }
 
 .card-more {
