@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   Home,
@@ -7,35 +7,39 @@ import {
   Info,
   Heart,
   PiggyBank,
-  Clock,
   GitPullRequest,
   GitCommitHorizontal,
   CircleDot,
   Network,
   Package,
+  FolderGit2,
   type LucideIcon,
 } from 'lucide-vue-next'
-import { NAV_PAGES, type NavPageName } from '@/site/pages'
+import { HEADER_NAV_PAGES, type HeaderNavPageName } from '@/site/pages'
+import { useNavOverflow } from '@/composables/useNavOverflow'
 
 const route = useRoute()
 const isMenuOpen = ref(false)
 const isScrolled = ref(false)
+const isReady = ref(false)
 const toggleButton = ref<HTMLButtonElement | null>(null)
+const menu = useTemplateRef<HTMLElement>('menu')
+const { compact } = useNavOverflow(useTemplateRef<HTMLElement>('navContainer'))
 
-const NAV_ICONS: Record<NavPageName, LucideIcon> = {
+const NAV_ICONS: Record<HeaderNavPageName, LucideIcon> = {
   home: Home,
   donate: Heart,
   resume: FileText,
+  works: FolderGit2,
   about: Info,
   log: GitCommitHorizontal,
   pulls: GitPullRequest,
   issues: CircleDot,
   releases: Package,
   repos: Network,
-  tarkov: Clock,
 }
 
-const navLinks = NAV_PAGES.map((page) => ({ ...page, icon: NAV_ICONS[page.name] }))
+const navLinks = HEADER_NAV_PAGES.map((page) => ({ ...page, icon: NAV_ICONS[page.name] }))
 
 const toggleMenu = (): void => {
   isMenuOpen.value = !isMenuOpen.value
@@ -51,11 +55,33 @@ const handleScroll = (): void => {
   isScrolled.value = window.scrollY > 20
 }
 
+const trapFocus = (event: KeyboardEvent): void => {
+  const links = menu.value?.querySelectorAll<HTMLElement>('a[href]')
+  if (!toggleButton.value || !links?.length) return
+  const first = toggleButton.value
+  const last = links.item(links.length - 1)
+  const target = event.shiftKey ? last : first
+  const edge = event.shiftKey ? first : last
+  const outside = !menu.value?.contains(document.activeElement) && document.activeElement !== first
+  if (document.activeElement !== edge && !outside) return
+  event.preventDefault()
+  target.focus()
+}
+
 const handleKeydown = (event: KeyboardEvent): void => {
-  if (event.key !== 'Escape' || !isMenuOpen.value) return
+  if (!isMenuOpen.value) return
+  if (event.key === 'Tab') {
+    trapFocus(event)
+    return
+  }
+  if (event.key !== 'Escape') return
   closeMenu()
   toggleButton.value?.focus()
 }
+
+watch(compact, (isCompact) => {
+  if (!isCompact) closeMenu()
+})
 
 const isActive = (path: string): boolean => {
   return route.path === path
@@ -65,6 +91,9 @@ onMounted(() => {
   window.addEventListener('scroll', handleScroll)
   window.addEventListener('keydown', handleKeydown)
   handleScroll()
+  requestAnimationFrame(() => {
+    isReady.value = true
+  })
 })
 
 onBeforeUnmount(() => {
@@ -75,8 +104,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <header :class="['nav-header', { scrolled: isScrolled }]">
-    <nav class="nav-container" aria-label="Основная навигация">
+  <header
+    :class="['nav-header', { scrolled: isScrolled, compact, ready: isReady, open: isMenuOpen }]"
+  >
+    <nav ref="navContainer" class="nav-container" aria-label="Основная навигация">
       <RouterLink to="/" class="nav-logo" @click="closeMenu">
         <PiggyBank class="logo-icon" :size="28" />
         <span class="logo-text">bob217</span>
@@ -96,7 +127,7 @@ onBeforeUnmount(() => {
         <span class="hamburger-line"></span>
       </button>
 
-      <div id="nav-menu" :class="['nav-menu', { open: isMenuOpen }]">
+      <div id="nav-menu" ref="menu" :class="['nav-menu', { open: isMenuOpen }]">
         <RouterLink
           v-for="link in navLinks"
           :key="link.path"
@@ -121,16 +152,34 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   z-index: var(--z-sticky);
-  background: transparent;
   transition:
-    background var(--transition-base),
-    box-shadow var(--transition-base);
+    box-shadow var(--transition-base),
+    z-index 0.3s step-end;
+}
+
+.nav-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(33, 33, 33, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.nav-header.open {
+  z-index: var(--z-modal);
+  transition: box-shadow var(--transition-base);
 }
 
 .nav-header.scrolled {
-  background: rgba(33, 33, 33, 0.95);
-  backdrop-filter: blur(10px);
   box-shadow: var(--shadow-md);
+}
+
+.nav-header.scrolled::before {
+  opacity: 1;
 }
 
 .nav-container {
@@ -259,47 +308,49 @@ onBeforeUnmount(() => {
   display: none;
 }
 
-@media (max-width: 768px) {
-  .nav-toggle {
-    display: flex;
-  }
+.compact .nav-toggle {
+  display: flex;
+}
 
-  .nav-menu {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: center;
-    gap: var(--spacing-md);
-    width: 280px;
-    padding: var(--spacing-xl);
-    background: var(--color-bg-secondary);
-    transform: translateX(100%);
-    visibility: hidden;
-    transition:
-      transform var(--transition-base),
-      visibility var(--transition-base);
-    z-index: var(--z-sticky);
-  }
+.compact .nav-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: safe center;
+  gap: var(--spacing-md);
+  overflow-y: auto;
+  width: 280px;
+  padding: var(--spacing-xl);
+  background: var(--color-bg-secondary);
+  transform: translateX(100%);
+  visibility: hidden;
+  z-index: var(--z-sticky);
+}
 
-  .nav-menu.open {
-    transform: translateX(0);
-    visibility: visible;
-  }
+.ready.compact .nav-menu {
+  transition:
+    transform var(--transition-base),
+    visibility var(--transition-base);
+}
 
-  .nav-link {
-    padding: var(--spacing-md) var(--spacing-lg);
-    font-size: var(--font-size-lg);
-  }
+.compact .nav-menu.open {
+  transform: translateX(0);
+  visibility: visible;
+}
 
-  .nav-overlay {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: calc(var(--z-sticky) - 1);
-  }
+.compact .nav-link {
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: var(--font-size-lg);
+}
+
+.compact .nav-overlay {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: calc(var(--z-sticky) - 1);
 }
 </style>

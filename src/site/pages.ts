@@ -1,4 +1,6 @@
-export const SITE_ORIGIN = 'https://bob217.ru'
+export const DEFAULT_SITE_ORIGIN = 'https://bob217.ru'
+export const siteOrigin = (value: string | undefined): string =>
+  value?.trim() ? new URL(value.trim()).origin : DEFAULT_SITE_ORIGIN
 export const SITE_TITLE = 'bob217 – Дот нет помойка и другие проекты'
 export const SITE_DESCRIPTION =
   'Стримы про программирование, пет-проекты на C# и .NET, игры и всякая дрисня от bobito217'
@@ -8,6 +10,7 @@ interface PageMeta {
   title: string
   description: string
   navLabel?: string
+  footerOnly?: boolean
   sectionSummary?: string
   priority?: number
   noindex?: boolean
@@ -34,10 +37,19 @@ const PAGES = {
     path: '/resume',
     title: 'Резюме – bob217',
     description:
-      'Резюме bobito217 как вывод git reflog: опыт, стек и проекты на C# и .NET по записям истории.',
+      'Трудовой путь bobito217 как git log по веткам: места работы, роли, стек на C# и .NET, образование и навыки.',
     navLabel: 'Резюме',
-    sectionSummary: 'опыт и стек как вывод git reflog',
+    sectionSummary: 'трудовой путь как git log по веткам',
     priority: 0.8,
+  },
+  works: {
+    path: '/works',
+    title: 'Заказы и поделки – bob217',
+    description:
+      'Заказы, подработки и проекты для души от bobito217 как вывод git reflog: гексапод, фармацевтическая ИС, браузерная игра и шахматы с плагинами.',
+    navLabel: 'Заказы',
+    sectionSummary: 'заказы и поделки как вывод git reflog',
+    priority: 0.7,
   },
   about: {
     path: '/about',
@@ -99,6 +111,7 @@ const PAGES = {
     description:
       'Игровое время Escape from Tarkov и таймеры крафтов: когда выходить в рейд и когда забирать выхлоп.',
     navLabel: 'Тарков',
+    footerOnly: true,
     sectionSummary: 'игровое время и таймеры крафтов',
     priority: 0.5,
   },
@@ -130,14 +143,39 @@ export type NavPageName = {
   [Name in SitePageName]: (typeof PAGES)[Name] extends { navLabel: string } ? Name : never
 }[SitePageName]
 
+export type HeaderNavPageName = Exclude<
+  NavPageName,
+  {
+    [Name in SitePageName]: (typeof PAGES)[Name] extends { footerOnly: true } ? Name : never
+  }[SitePageName]
+>
+
 export interface NavPage {
   name: NavPageName
   path: string
   label: string
+  footerOnly: boolean
+}
+
+export interface HeaderNavPage extends NavPage {
+  name: HeaderNavPageName
 }
 
 export const NAV_PAGES: readonly NavPage[] = SITE_PAGES.flatMap((page) =>
-  page.navLabel ? [{ name: page.name as NavPageName, path: page.path, label: page.navLabel }] : [],
+  page.navLabel
+    ? [
+        {
+          name: page.name as NavPageName,
+          path: page.path,
+          label: page.navLabel,
+          footerOnly: page.footerOnly ?? false,
+        },
+      ]
+    : [],
+)
+
+export const HEADER_NAV_PAGES: readonly HeaderNavPage[] = NAV_PAGES.filter(
+  (page): page is HeaderNavPage => !page.footerOnly,
 )
 
 const SECTION_ORDER: readonly SitePageName[] = [
@@ -147,6 +185,7 @@ const SECTION_ORDER: readonly SitePageName[] = [
   'releases',
   'repos',
   'resume',
+  'works',
   'about',
   'donate',
   'tarkov',

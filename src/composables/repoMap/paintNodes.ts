@@ -1,11 +1,14 @@
 import { DOLLY_MS } from './camera'
 import { FLARE_MS } from './layout'
-import { clamp01, easeOutBack, TAU } from './math'
+import { clamp01, depthAlpha, easeOutBack, TAU } from './math'
 import { blit, glowSprite, spikeSprite } from './sprites'
 import { drawChip, MONO } from './text'
 import type { Frame, Node } from './types'
 
 const LABEL_ZOOM = 1.3
+const LABEL_DEPTH = 0.8
+const NEAR_FROM = 1.12
+const NEAR_FULL = 1.27
 
 const nodeAlpha = (f: Frame, n: Node): number => {
   if (f.hardOut(n)) return 0.12
@@ -19,15 +22,17 @@ export const paintNodes = (f: Frame): void => {
   for (const n of f.nodes) {
     const intro = f.intro(n.introDelay, 420)
     if (intro <= 0) continue
-    const [sx, sy] = vp.w2s(n.bx + n.ox, n.by + n.oy)
+    const [sx, sy, dz] = vp.w2s(n.bx + n.ox, n.by + n.oy, n.bz)
     const hv = f.hover === n
     const g = f.domGlow(n.repo.domain)
     const wave = f.pulseWave(n.dist)
     const tw = f.reduce ? 1 : 1 + 0.07 * Math.sin((f.now / 900) * n.twSpeed + n.twPhase)
     const grow = clamp01(easeOutBack(intro))
     const nr =
-      Math.max(0.4, f.nodeRadius(n) * vp.cam.s) * grow * (hv ? 1.28 : 1 + 0.08 * g + 0.35 * wave)
-    const A = nodeAlpha(f, n)
+      Math.max(0.4, f.nodeRadius(n) * vp.cam.s * dz) *
+      grow *
+      (hv ? 1.28 : 1 + 0.08 * g + 0.35 * wave)
+    const A = nodeAlpha(f, n) * depthAlpha(dz)
 
     ctx.save()
     ctx.globalCompositeOperation = 'lighter'
@@ -66,16 +71,23 @@ export const paintNodes = (f: Frame): void => {
 
 export const paintNodeLabels = (f: Frame): void => {
   const { ctx, vp } = f
-  if (vp.cam.s < LABEL_ZOOM || (!f.reduce && f.age(0) < DOLLY_MS)) return
-  const zoomIn = Math.min(1, (vp.cam.s - LABEL_ZOOM) / 0.3)
+  if (!f.reduce && f.age(0) < DOLLY_MS) return
+  const near = !vp.flat()
+  if (vp.cam.s < LABEL_ZOOM && !near) return
+  const zoomIn = clamp01((vp.cam.s - LABEL_ZOOM) / 0.3)
   ctx.save()
   ctx.font = `10px ${MONO}`
   for (const n of f.nodes) {
     const intro = f.intro(n.introDelay, 420)
     if (intro <= 0 || f.hardOut(n)) continue
-    const [sx, sy] = vp.w2s(n.bx + n.ox, n.by + n.oy)
-    const nr = f.nodeRadius(n) * vp.cam.s
-    ctx.globalAlpha = zoomIn * intro * (f.hover && f.hover !== n ? 0.5 : 1)
+    const [sx, sy, dz] = vp.w2s(n.bx + n.ox, n.by + n.oy, n.bz)
+    if (dz < LABEL_DEPTH && !f.bright.has(n)) continue
+    const show = near
+      ? Math.max(zoomIn, clamp01((dz - NEAR_FROM) / (NEAR_FULL - NEAR_FROM)))
+      : zoomIn
+    if (show <= 0) continue
+    const nr = f.nodeRadius(n) * vp.cam.s * dz
+    ctx.globalAlpha = show * intro * depthAlpha(dz) * (f.hover && f.hover !== n ? 0.5 : 1)
     drawChip(ctx, n.repo.name, sx, sy + nr + 7, f.hover === n ? '#fff' : '#c9c9c9')
   }
   ctx.restore()

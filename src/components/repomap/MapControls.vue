@@ -1,20 +1,51 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
 import CmdLine from '@/components/CmdLine.vue'
+import type { MapView } from '@/composables/repoMap/camera'
 import { SIZE_OPTIONS, type SizeBy } from '@/composables/useForkMap'
 
-defineProps<{
+const props = defineProps<{
   filt: 'all' | 'forked'
   flowLayer: boolean
   sizeBy: SizeBy
+  view: MapView
   total: number
   forked: number
   sizeHint: string
   error: string | null
+  staleAt: number | null
 }>()
+
+const DAY = 24 * 60 * 60 * 1000
+
+const staleTime = computed(() => {
+  if (props.staleAt === null) return ''
+  const at = new Date(props.staleAt)
+  const time = { hour: '2-digit', minute: '2-digit' } as const
+  return Date.now() - props.staleAt < DAY
+    ? at.toLocaleTimeString('ru-RU', time)
+    : at.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', ...time })
+})
+
+const VIEW_OPTIONS: { key: MapView; label: string; mode: string; keys: string }[] = [
+  { key: 'flat', label: 'плоско', mode: 'вид сверху', keys: 'drag – пан, scroll – зум' },
+  {
+    key: 'orbit',
+    label: 'орбита',
+    mode: 'наклон диска',
+    keys: 'drag – орбита, Shift+drag – пан',
+  },
+]
+
+const viewAnnounce = computed(() => {
+  const active = VIEW_OPTIONS.find((o) => o.key === props.view)
+  return active ? `вид: ${active.label}, ${active.mode}` : ''
+})
 
 const emit = defineEmits<{
   (e: 'update:filt', value: 'all' | 'forked'): void
   (e: 'update:sizeBy', value: SizeBy): void
+  (e: 'update:view', value: MapView): void
   (e: 'toggle-flow'): void
   (e: 'rebuild'): void
 }>()
@@ -22,22 +53,32 @@ const emit = defineEmits<{
 
 <template>
   <div class="ov tl">
-    <CmdLine @run="emit('rebuild')">build --map --from-scratch</CmdLine>
+    <CmdLine button @run="emit('rebuild')">build --map --from-scratch</CmdLine>
     <h1>Карта репозиториев</h1>
     <div class="chips">
-      <button class="chip" :class="{ on: filt === 'all' }" @click="emit('update:filt', 'all')">
+      <button
+        type="button"
+        class="chip"
+        :class="{ on: filt === 'all' }"
+        :aria-pressed="filt === 'all'"
+        @click="emit('update:filt', 'all')"
+      >
         все {{ total }}
       </button>
       <button
+        type="button"
         class="chip"
         :class="{ on: filt === 'forked' }"
+        :aria-pressed="filt === 'forked'"
         @click="emit('update:filt', 'forked')"
       >
         форкнутые {{ forked }}
       </button>
       <button
+        type="button"
         class="chip"
         :class="{ on: flowLayer }"
+        :aria-pressed="flowLayer"
         title="Жёлтые импульсы: принятые PR соавторов в основной репозиторий"
         @click="emit('toggle-flow')"
       >
@@ -49,15 +90,36 @@ const emit = defineEmits<{
       <button
         v-for="o in SIZE_OPTIONS"
         :key="o.key"
+        type="button"
         class="chip sm"
         :class="{ on: sizeBy === o.key }"
+        :aria-pressed="sizeBy === o.key"
         @click="emit('update:sizeBy', o.key)"
       >
         {{ o.label }}
       </button>
     </div>
+    <div class="chips size">
+      <span class="chips-lbl">вид:</span>
+      <button
+        v-for="o in VIEW_OPTIONS"
+        :key="o.key"
+        type="button"
+        class="chip sm"
+        :class="{ on: view === o.key }"
+        :aria-pressed="view === o.key"
+        :title="`${o.mode}: ${o.keys}`"
+        @click="emit('update:view', o.key)"
+      >
+        {{ o.label }}
+      </button>
+      <span class="sr-only" aria-live="polite" aria-atomic="true">{{ viewAnnounce }}</span>
+    </div>
     <div class="note">{{ sizeHint }}</div>
-    <div v-if="error" class="note err">{{ error }}</div>
+    <div v-if="staleAt !== null" class="note warn">
+      warning: данные от {{ staleTime }}<template v-if="error">, {{ error }}</template>
+    </div>
+    <div v-else-if="error" class="note err">{{ error }}</div>
     <div v-if="flowLayer" class="note flow">жёлтые импульсы – принятые PR соавторов в оригинал</div>
   </div>
 </template>
@@ -105,9 +167,12 @@ h1 {
 }
 
 .chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   font-family: var(--font-family-mono);
   font-size: var(--font-size-xs);
-  padding: 4px 11px;
+  padding: 2px 11px;
   border-radius: var(--radius-full);
   background: rgba(38, 38, 38, 0.7);
   border: 1px solid var(--color-bg-tertiary);
@@ -120,7 +185,7 @@ h1 {
 }
 
 .chip.sm {
-  padding: 3px 9px;
+  padding: 2px 9px;
 }
 
 .chip:hover {
@@ -148,6 +213,16 @@ h1 {
 
 .note.err {
   color: var(--color-danger);
+}
+
+.note.warn {
+  color: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip {
+    transition: none;
+  }
 }
 
 @media (max-width: 720px) {

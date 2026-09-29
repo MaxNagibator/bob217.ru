@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 import CmdLine from '@/components/CmdLine.vue'
 import { useCmdReplay } from '@/composables/useCmdReplay'
+import { SITE_ORIGIN } from '@/utils/meta'
 
 const router = useRouter()
 
@@ -13,9 +14,10 @@ const { phaseClass, start, print } = useCmdReplay(() => 280)
 
 <template>
   <div class="err">
-    <main class="term term--danger" :class="phaseClass">
+    <section class="term term--danger" :class="phaseClass">
+      <h1 class="sr-only">500 – внутренняя ошибка сервера</h1>
       <p class="eyebrow"><span class="h">##</span> error</p>
-      <CmdLine @run="start" @done="print">curl -sSf https://keep2space.ru</CmdLine>
+      <CmdLine @run="start" @done="print">curl -sSf {{ SITE_ORIGIN }}</CmdLine>
       <div class="code cmd-out">500</div>
       <p class="fatal cmd-out"><span class="kw">fatal:</span> внутренняя ошибка сервера</p>
       <p class="hint cmd-out">что-то упало на нашей стороне – уже чиним.</p>
@@ -23,7 +25,7 @@ const { phaseClass, start, print } = useCmdReplay(() => 280)
         <button class="cmd-btn" @click="goBack"><span class="p">$</span> cd -</button>
         <button class="cmd-btn" @click="goHome"><span class="p">$</span> cd ~/</button>
       </div>
-    </main>
+    </section>
   </div>
 </template>
 

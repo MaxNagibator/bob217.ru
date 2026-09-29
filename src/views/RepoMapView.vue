@@ -6,6 +6,7 @@ import MapBoot from '@/components/repomap/MapBoot.vue'
 import MapControls from '@/components/repomap/MapControls.vue'
 import MapCounter from '@/components/repomap/MapCounter.vue'
 import MapLegend from '@/components/repomap/MapLegend.vue'
+import MapNodeList from '@/components/repomap/MapNodeList.vue'
 import RepoTip from '@/components/repomap/RepoTip.vue'
 import { useForkMap, type SizeBy } from '@/composables/useForkMap'
 import { useRepoMapScene } from '@/composables/useRepoMapScene'
@@ -22,6 +23,7 @@ const {
   stage: loadStage,
   foundRepos,
   foundPulls,
+  staleAt,
 } = useForkMap()
 
 const filt = ref<'all' | 'forked'>('all')
@@ -29,7 +31,19 @@ const flowLayer = ref(false)
 const langOff = ref<Set<string>>(new Set())
 const sizeBy = ref<SizeBy>('stars')
 
-const { tip, satTip, coreTip, counter, mount, pulse, rebuild } = useRepoMapScene({
+const {
+  tip,
+  satTip,
+  coreTip,
+  counter,
+  view,
+  setView,
+  mount,
+  pulse,
+  rebuild,
+  focusRepo,
+  resetHome,
+} = useRepoMapScene({
   repos,
   filt,
   flowLayer,
@@ -85,11 +99,31 @@ const sizeHint = computed(() => {
   if (sizeBy.value !== 'commits') return SIZE_HINT[sizeBy.value]
   if (commitsState.value === 'loading')
     return `считаю коммиты: ${commitsDone.value} / ${repos.value.length}`
-  if (commitsState.value === 'partial') return 'коммиты частично: лимит GitHub, клик повторит'
+  if (commitsState.value === 'partial')
+    return 'коммиты частично: часть запросов не прошла, клик повторит'
   return SIZE_HINT.commits
 })
 
+const hintLine = computed(() =>
+  view.value === 'orbit'
+    ? 'scroll – зум · drag – орбита · Shift+drag – пан · клик по узлу – фокус · клик по ядру – обзор · с клавиатуры: стрелки – орбита, Shift+стрелки – пан, Home – обзор'
+    : 'scroll – зум · drag – пан · клик по узлу – фокус · клик по ядру – обзор · с клавиатуры: стрелки – пан, Home – обзор',
+)
+
+const canvasLabel = computed(() =>
+  view.value === 'orbit'
+    ? 'карта репозиториев, вид: орбита, наклон диска: узлы – репозитории, спутники – соавторы; стрелки – орбита, Shift+стрелки – пан, Home – обзор'
+    : 'карта репозиториев, вид: плоско, вид сверху: узлы – репозитории, спутники – соавторы; стрелки – пан, Home – обзор',
+)
+
 const forkedCount = computed(() => repos.value.filter((r) => r.forks > 0).length)
+
+const visibleRepos = computed(() =>
+  repos.value.filter((r) => {
+    if (filt.value === 'forked' && r.forks === 0) return false
+    return !(langOff.value.size > 0 && langOff.value.has(r.lang))
+  }),
+)
 
 const booting = computed(() => loadStage.value === 'repos' || loadStage.value === 'pulls')
 
@@ -118,7 +152,13 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="stage" class="stage">
-    <canvas ref="canvas" class="map-canvas"></canvas>
+    <canvas
+      ref="canvas"
+      class="map-canvas"
+      role="img"
+      tabindex="0"
+      :aria-label="canvasLabel"
+    ></canvas>
 
     <Transition name="boot">
       <MapBoot v-if="booting" :repos="foundRepos" :pulls="foundPulls" />
@@ -128,12 +168,15 @@ onBeforeUnmount(() => {
       :filt="filt"
       :flow-layer="flowLayer"
       :size-by="sizeBy"
+      :view="view"
       :total="stats.total"
       :forked="forkedCount"
       :size-hint="sizeHint"
       :error="error"
+      :stale-at="staleAt"
       @update:filt="setFilt"
       @update:size-by="setSize"
+      @update:view="setView"
       @toggle-flow="toggleFlow"
       @rebuild="rebuild"
     />
@@ -142,13 +185,21 @@ onBeforeUnmount(() => {
 
     <MapLegend :langs="langCounts" :off="langOff" @toggle="toggleLang" />
 
-    <div class="ov br">scroll – зум · drag – пан · клик по узлу – фокус · клик по ядру – обзор</div>
+    <MapNodeList :repos="visibleRepos" @focus="focusRepo" @home="resetHome" />
+
+    <div class="ov br">{{ hintLine }}</div>
 
     <RepoTip v-if="tip" :tip="tip" :stage-w="stageW" :stage-h="stageH" />
 
     <ContributorTip v-if="satTip && !tip" :tip="satTip" :stage-w="stageW" :stage-h="stageH" />
 
-    <CoreTip v-if="coreTip && !tip && !satTip" :tip="coreTip" :stats="stats" />
+    <CoreTip
+      v-if="coreTip && !tip && !satTip"
+      :tip="coreTip"
+      :stats="stats"
+      :stage-w="stageW"
+      :stage-h="stageH"
+    />
   </div>
 </template>
 
@@ -166,6 +217,12 @@ onBeforeUnmount(() => {
   inset: 0;
   display: block;
   cursor: grab;
+  touch-action: none;
+}
+
+.map-canvas:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
 }
 
 .map-canvas.grabbing {
@@ -187,7 +244,7 @@ onBeforeUnmount(() => {
   right: var(--spacing-lg);
   font-family: var(--font-family-mono);
   font-size: 11px;
-  color: #6b6b6b;
+  color: var(--color-text-tertiary);
   text-align: right;
   max-width: 46%;
 }
@@ -200,6 +257,13 @@ onBeforeUnmount(() => {
 .boot-enter-from,
 .boot-leave-to {
   opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-enter-active,
+  .boot-leave-active {
+    transition: none;
+  }
 }
 
 @media (max-width: 720px) {

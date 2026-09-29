@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { ref } from 'vue'
 import GraphLanes from '@/components/log/GraphLanes.vue'
 import type { CommitRow } from '@/composables/useCommitLog'
 import { useScramble } from '@/composables/useScramble'
@@ -9,20 +10,21 @@ const props = defineProps<{
   head?: boolean
 }>()
 
-const sha = useScramble(props.row.commit.short, 200 + Math.min(props.index * 22, 520))
+const SCRAMBLED_ROWS = 12
+
+const sha =
+  props.index < SCRAMBLED_ROWS
+    ? useScramble(props.row.commit.short, 200 + props.index * 22)
+    : ref(props.row.commit.short)
 </script>
 
 <template>
   <li class="row" :class="{ head }" :style="{ '--i': index, '--repo-color': row.color }">
     <GraphLanes :lanes="row.lanes" :head="head" />
     <div class="body typed">
-      <a
-        class="sha"
-        :href="row.commit.url"
-        :aria-label="`коммит ${row.commit.short} в ${row.commit.repo}`"
-        target="_blank"
-        rel="noopener noreferrer"
-        >{{ sha }}</a
+      <a class="sha" :href="row.commit.url" target="_blank" rel="noopener noreferrer"
+        ><span class="sr-only">коммит </span>{{ sha
+        }}<span class="sr-only"> в {{ row.commit.repo }}</span></a
       >
       <span class="title">{{ row.commit.title }}</span>
       <span class="meta">
@@ -140,7 +142,7 @@ const sha = useScramble(props.row.commit.short, 200 + Math.min(props.index * 22,
 }
 
 .repo {
-  color: var(--repo-color);
+  color: color-mix(in srgb, var(--repo-color) 75%, var(--color-text-primary));
   text-decoration: none;
   opacity: 0.85;
 }

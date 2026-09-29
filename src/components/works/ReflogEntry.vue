@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import type { ResumeRow } from '@/composables/useResumeLog'
+import type { WorkRow } from '@/composables/useWorkLog'
 import { useScramble } from '@/composables/useScramble'
 
 const props = defineProps<{
-  row: ResumeRow
+  row: WorkRow
   index: number
 }>()
 
@@ -21,11 +21,12 @@ const hash = useScramble(props.row.hash, 200 + Math.min(props.index * 40, 400))
       <p class="meta">
         <span class="hash">{{ hash }}</span>
         <span class="ptr">{{ row.pointer }}</span>
+        <span class="kind" :class="row.entry.kind">{{ row.kindLabel }}</span>
         <i class="fill" aria-hidden="true"></i>
         <span v-if="index === 0" class="badge">HEAD</span>
       </p>
 
-      <h3 class="title">{{ row.entry.title }}</h3>
+      <h2 class="title">{{ row.entry.title }}</h2>
 
       <p class="refs">
         <span
@@ -186,6 +187,18 @@ const hash = useScramble(props.row.hash, 200 + Math.min(props.index * 40, 400))
   letter-spacing: 0.04em;
 }
 
+.kind {
+  letter-spacing: 0.04em;
+}
+
+.kind.order {
+  color: var(--color-link);
+}
+
+.kind.hired {
+  color: var(--color-accent);
+}
+
 .fill {
   flex: 1;
   min-width: var(--spacing-md);
@@ -236,8 +249,15 @@ const hash = useScramble(props.row.hash, 200 + Math.min(props.index * 40, 400))
   color: var(--color-text-muted);
 }
 
-.ref.lang {
-  color: var(--ref);
+.ref.lang::before {
+  content: '';
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.5ch;
+  border-radius: var(--radius-full);
+  background: var(--ref);
+  vertical-align: 0.05em;
 }
 
 .text {
